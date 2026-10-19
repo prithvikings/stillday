@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { useSharedCompletions } from "../../hooks/CompletionsProvider";
 import { useHabits } from "../../hooks/HabitsProvider";
+import { useAppTheme } from "../../hooks/ThemeProvider";
 import { exportBackup } from "../../services/backup";
 
 const SETTINGS_KEY = "@stillday/settings";
@@ -36,7 +37,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 export default function SettingsScreen() {
   const { habits, replaceHabits, resetHabits } = useHabits();
-
+  const { appearance, setAppearance, colors, isDark } = useAppTheme();
   const { completions, replaceCompletions, resetCompletions } =
     useSharedCompletions();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
@@ -69,19 +70,15 @@ export default function SettingsScreen() {
               parsed.appearance === "dark" || parsed.appearance === "light"
                 ? parsed.appearance
                 : "system",
-
             weekStartsOn:
               parsed.weekStartsOn === "sunday" ? "sunday" : "monday",
-
             remindersEnabled: parsed.remindersEnabled === true,
-
             reminderHour:
               typeof parsed.reminderHour === "number" &&
               parsed.reminderHour >= 0 &&
               parsed.reminderHour <= 23
                 ? parsed.reminderHour
                 : 8,
-
             reminderMinute:
               typeof parsed.reminderMinute === "number" &&
               parsed.reminderMinute >= 0 &&
@@ -121,9 +118,22 @@ export default function SettingsScreen() {
 
     try {
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+
+      if (next.appearance !== previous.appearance) {
+        await setAppearance(next.appearance);
+      }
     } catch (error) {
       console.error("Failed to save settings:", error);
       setSettings(previous);
+
+      // Restore the previous appearance if saving fails.
+      try {
+        if (appearance !== previous.appearance) {
+          await setAppearance(previous.appearance);
+        }
+      } catch (restoreError) {
+        console.error("Failed to restore appearance:", restoreError);
+      }
 
       Alert.alert("Couldn't save settings", "Please try again.");
     } finally {
@@ -157,7 +167,7 @@ export default function SettingsScreen() {
       }
 
       const file = result.assets[0];
-      const json = await FileSystem.File.fromUri(file.uri).text();
+      const json = await new File(file.uri).text();
 
       // Validate the backup before asking to replace existing data.
       const { parseBackup } = await import("../../services/importBackup");
@@ -280,15 +290,22 @@ export default function SettingsScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#F7F5EF]">
-        <ActivityIndicator size="large" color="#39745F" />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: isDark ? colors.background : "#F7F5EF" }}
+      >
+        <ActivityIndicator
+          size="large"
+          color={isDark ? colors.primary : "#39745F"}
+        />
       </View>
     );
   }
 
   return (
     <ScrollView
-      className="flex-1 bg-[#F7F5EF]"
+      className="flex-1"
+      style={{ backgroundColor: isDark ? colors.background : "#F7F5EF" }}
       contentContainerStyle={{
         paddingHorizontal: 24,
         paddingTop: 64,
@@ -297,80 +314,130 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <Text className="text-sm font-medium uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="text-sm font-medium uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         STILLDAY
       </Text>
 
-      <Text className="mt-6 text-3xl font-semibold text-[#26382F]">
+      <Text
+        className="mt-6 text-3xl font-semibold"
+        style={{ color: isDark ? colors.text : "#26382F" }}
+      >
         Make it yours.
       </Text>
 
-      <Text className="mt-2 text-base leading-6 text-[#85877D]">
+      <Text
+        className="mt-2 text-base leading-6"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         A few small choices to make Stillday work for you.
       </Text>
 
       {/* Appearance */}
-      <Text className="mb-3 mt-9 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mb-3 mt-9 text-sm font-semibold uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         APPEARANCE
       </Text>
 
-      <View className="rounded-2xl border border-[#DCD8CC] bg-white p-4">
-        <Text className="text-base font-semibold text-[#26382F]">
+      <View
+        className="rounded-2xl border p-4"
+        style={{
+          backgroundColor: isDark ? colors.card : "#FFFFFF",
+          borderColor: isDark ? colors.border : "#DCD8CC",
+        }}
+      >
+        <Text
+          className="text-base font-semibold"
+          style={{ color: isDark ? colors.text : "#26382F" }}
+        >
           Colour theme
         </Text>
 
-        <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+        <Text
+          className="mt-1 text-sm leading-5"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           Choose how you prefer to view Stillday.
         </Text>
 
         <View className="mt-4 flex-row">
-          {(["system", "light", "dark"] as const).map((appearance) => {
-            const selected = settings.appearance === appearance;
+          {(["system", "light", "dark"] as const).map((appearanceOption) => {
+            const selected = settings.appearance === appearanceOption;
 
             const label =
-              appearance === "system"
+              appearanceOption === "system"
                 ? "System"
-                : appearance === "light"
+                : appearanceOption === "light"
                   ? "Light"
                   : "Dark";
 
             const icon =
-              appearance === "system"
+              appearanceOption === "system"
                 ? "▣"
-                : appearance === "light"
+                : appearanceOption === "light"
                   ? "☀"
                   : "☾";
 
             return (
               <Pressable
-                key={appearance}
+                key={appearanceOption}
                 disabled={saving}
                 onPress={() =>
                   updateSettings({
                     ...settings,
-                    appearance,
+                    appearance: appearanceOption,
                   })
                 }
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                className={`mr-2 flex-1 items-center rounded-xl border p-3 ${
-                  selected
-                    ? "border-[#39745F] bg-[#39745F]"
-                    : "border-[#DCD8CC] bg-[#F7F5EF]"
-                }`}
+                className="mr-2 flex-1 items-center rounded-xl border p-3"
+                style={{
+                  backgroundColor: selected
+                    ? isDark
+                      ? colors.primary
+                      : "#39745F"
+                    : isDark
+                      ? colors.muted
+                      : "#F7F5EF",
+                  borderColor: selected
+                    ? isDark
+                      ? colors.primary
+                      : "#39745F"
+                    : isDark
+                      ? colors.border
+                      : "#DCD8CC",
+                }}
               >
                 <Text
-                  className={`text-lg ${
-                    selected ? "text-white" : "text-[#26382F]"
-                  }`}
+                  className="text-lg"
+                  style={{
+                    color: selected
+                      ? isDark
+                        ? "#171E1A"
+                        : "#FFFFFF"
+                      : isDark
+                        ? colors.text
+                        : "#26382F",
+                  }}
                 >
                   {icon}
                 </Text>
 
                 <Text
-                  className={`mt-2 text-sm font-semibold ${
-                    selected ? "text-white" : "text-[#26382F]"
-                  }`}
+                  className="mt-2 text-sm font-semibold"
+                  style={{
+                    color: selected
+                      ? isDark
+                        ? "#171E1A"
+                        : "#FFFFFF"
+                      : isDark
+                        ? colors.text
+                        : "#26382F",
+                  }}
                 >
                   {label}
                 </Text>
@@ -378,26 +445,34 @@ export default function SettingsScreen() {
             );
           })}
         </View>
-
-        {settings.appearance === "light" && (
-          <Text className="mt-3 text-xs leading-5 text-[#85877D]">
-            Your preference is saved. Dark theme styling across the app will be
-            implemented separately.
-          </Text>
-        )}
       </View>
 
       {/* Week starts on */}
-      <Text className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         WEEK STARTS ON
       </Text>
 
-      <View className="rounded-2xl border border-[#DCD8CC] bg-white p-4">
-        <Text className="text-base font-semibold text-[#26382F]">
+      <View
+        className="rounded-2xl border p-4"
+        style={{
+          backgroundColor: isDark ? colors.card : "#FFFFFF",
+          borderColor: isDark ? colors.border : "#DCD8CC",
+        }}
+      >
+        <Text
+          className="text-base font-semibold"
+          style={{ color: isDark ? colors.text : "#26382F" }}
+        >
           First day of the week
         </Text>
 
-        <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+        <Text
+          className="mt-1 text-sm leading-5"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           Choose how your weekly progress is organized.
         </Text>
 
@@ -417,16 +492,35 @@ export default function SettingsScreen() {
                 }
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                className={`mr-2 flex-1 items-center rounded-xl border p-4 ${
-                  selected
-                    ? "border-[#39745F] bg-[#39745F]"
-                    : "border-[#DCD8CC] bg-[#F7F5EF]"
-                }`}
+                className="mr-2 flex-1 items-center rounded-xl border p-4"
+                style={{
+                  backgroundColor: selected
+                    ? isDark
+                      ? colors.primary
+                      : "#39745F"
+                    : isDark
+                      ? colors.muted
+                      : "#F7F5EF",
+                  borderColor: selected
+                    ? isDark
+                      ? colors.primary
+                      : "#39745F"
+                    : isDark
+                      ? colors.border
+                      : "#DCD8CC",
+                }}
               >
                 <Text
-                  className={`font-semibold ${
-                    selected ? "text-white" : "text-[#26382F]"
-                  }`}
+                  className="font-semibold"
+                  style={{
+                    color: selected
+                      ? isDark
+                        ? "#171E1A"
+                        : "#FFFFFF"
+                      : isDark
+                        ? colors.text
+                        : "#26382F",
+                  }}
                 >
                   {day === "monday" ? "Monday" : "Sunday"}
                 </Text>
@@ -437,17 +531,32 @@ export default function SettingsScreen() {
       </View>
 
       {/* Reminders */}
-      <Text className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         REMINDERS
       </Text>
 
-      <View className="flex-row items-center rounded-2xl border border-[#DCD8CC] bg-white p-4">
+      <View
+        className="flex-row items-center rounded-2xl border p-4"
+        style={{
+          backgroundColor: isDark ? colors.card : "#FFFFFF",
+          borderColor: isDark ? colors.border : "#DCD8CC",
+        }}
+      >
         <View className="mr-4 flex-1">
-          <Text className="text-base font-semibold text-[#26382F]">
+          <Text
+            className="text-base font-semibold"
+            style={{ color: isDark ? colors.text : "#26382F" }}
+          >
             Daily reminders
           </Text>
 
-          <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+          <Text
+            className="mt-1 text-sm leading-5"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
             Keep a gentle reminder of the habits you want to build.
           </Text>
         </View>
@@ -462,30 +571,44 @@ export default function SettingsScreen() {
             })
           }
           trackColor={{
-            false: "#DCD8CC",
-            true: "#39745F",
+            false: isDark ? colors.border : "#DCD8CC",
+            true: isDark ? colors.primary : "#39745F",
           }}
           thumbColor="#FFFFFF"
           accessibilityLabel="Daily reminders preference"
         />
       </View>
+
       <Pressable
         disabled={saving}
         onPress={() => setShowReminderTimePicker(true)}
         accessibilityRole="button"
-        className="mt-3 flex-row items-center justify-between rounded-2xl border border-[#DCD8CC] bg-white p-4"
+        className="mt-3 flex-row items-center justify-between rounded-2xl border p-4"
+        style={{
+          backgroundColor: isDark ? colors.card : "#FFFFFF",
+          borderColor: isDark ? colors.border : "#DCD8CC",
+        }}
       >
         <View className="flex-1">
-          <Text className="text-base font-semibold text-[#26382F]">
+          <Text
+            className="text-base font-semibold"
+            style={{ color: isDark ? colors.text : "#26382F" }}
+          >
             Reminder time
           </Text>
 
-          <Text className="mt-1 text-sm text-[#85877D]">
+          <Text
+            className="mt-1 text-sm"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
             Choose when you'd like your gentle reminder.
           </Text>
         </View>
 
-        <Text className="ml-3 font-semibold text-[#39745F]">
+        <Text
+          className="ml-3 font-semibold"
+          style={{ color: isDark ? colors.primary : "#39745F" }}
+        >
           {formatReminderTime(settings.reminderHour, settings.reminderMinute)}
           {"  ›"}
         </Text>
@@ -503,7 +626,7 @@ export default function SettingsScreen() {
           onValueChange={(event, selectedDate) => {
             setShowReminderTimePicker(false);
 
-            if (event.type === "set" && selectedDate) {
+            if (selectedDate) {
               updateSettings({
                 ...settings,
                 reminderHour: selectedDate.getHours(),
@@ -513,108 +636,233 @@ export default function SettingsScreen() {
           }}
         />
       )}
-      <Text className="mt-2 px-1 text-xs leading-5 text-[#85877D]">
+
+      <Text
+        className="mt-2 px-1 text-xs leading-5"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         This currently saves your preference only. Scheduling actual
         notifications will be added in a later step.
       </Text>
 
       {/* Data management */}
-      <Text className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         YOUR DATA
       </Text>
 
-      <View className="rounded-2xl border border-[#DCD8CC] bg-white p-4">
-        <Text className="text-base font-semibold text-[#26382F]">
+      <View
+        className="rounded-2xl border p-4"
+        style={{
+          backgroundColor: isDark ? colors.card : "#FFFFFF",
+          borderColor: isDark ? colors.border : "#DCD8CC",
+        }}
+      >
+        <Text
+          className="text-base font-semibold"
+          style={{ color: isDark ? colors.text : "#26382F" }}
+        >
           Stored on your device
         </Text>
 
-        <Text className="mt-2 text-sm leading-5 text-[#85877D]">
+        <Text
+          className="mt-2 text-sm leading-5"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           Your habits and completion history are stored locally on this device.
           Create a backup to keep a separate copy of your progress.
         </Text>
 
-        <View className="my-4 h-px bg-[#DCD8CC]" />
+        <View
+          className="my-4 h-px"
+          style={{ backgroundColor: isDark ? colors.border : "#DCD8CC" }}
+        />
 
         <Pressable
           onPress={handleExportData}
           disabled={saving}
           accessibilityRole="button"
-          className="flex-row items-center rounded-xl border border-[#DCD8CC] bg-[#F7F5EF] p-4"
+          className="flex-row items-center rounded-xl border p-4"
+          style={{
+            backgroundColor: isDark ? colors.muted : "#F7F5EF",
+            borderColor: isDark ? colors.border : "#DCD8CC",
+          }}
         >
-          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#EAE6DA]">
-            <Text className="text-xl text-[#39745F]">↑</Text>
+          <View
+            className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
+          >
+            <Text
+              className="text-xl"
+              style={{ color: isDark ? colors.primary : "#39745F" }}
+            >
+              ↑
+            </Text>
           </View>
 
           <View className="flex-1">
-            <Text className="font-semibold text-[#26382F]">Export data</Text>
+            <Text
+              className="font-semibold"
+              style={{ color: isDark ? colors.text : "#26382F" }}
+            >
+              Export data
+            </Text>
 
-            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+            <Text
+              className="mt-1 text-sm leading-5"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
               Save your habits and progress as a JSON backup.
             </Text>
           </View>
 
-          <Text className="ml-2 text-xl text-[#39745F]">›</Text>
+          <Text
+            className="ml-2 text-xl"
+            style={{ color: isDark ? colors.primary : "#39745F" }}
+          >
+            ›
+          </Text>
         </Pressable>
+
         <Pressable
           onPress={handleImportData}
           disabled={saving}
           accessibilityRole="button"
-          className="mt-3 flex-row items-center rounded-xl border border-[#DCD8CC] bg-[#F7F5EF] p-4"
+          className="mt-3 flex-row items-center rounded-xl border p-4"
+          style={{
+            backgroundColor: isDark ? colors.muted : "#F7F5EF",
+            borderColor: isDark ? colors.border : "#DCD8CC",
+          }}
         >
-          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#EAE6DA]">
-            <Text className="text-xl text-[#39745F]">↓</Text>
+          <View
+            className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+            style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
+          >
+            <Text
+              className="text-xl"
+              style={{ color: isDark ? colors.primary : "#39745F" }}
+            >
+              ↓
+            </Text>
           </View>
 
           <View className="flex-1">
-            <Text className="font-semibold text-[#26382F]">Import data</Text>
+            <Text
+              className="font-semibold"
+              style={{ color: isDark ? colors.text : "#26382F" }}
+            >
+              Import data
+            </Text>
 
-            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+            <Text
+              className="mt-1 text-sm leading-5"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
               Restore habits and progress from a backup file.
             </Text>
           </View>
 
-          <Text className="ml-2 text-xl text-[#39745F]">›</Text>
+          <Text
+            className="ml-2 text-xl"
+            style={{ color: isDark ? colors.primary : "#39745F" }}
+          >
+            ›
+          </Text>
         </Pressable>
 
         <Pressable
           onPress={handleResetData}
           disabled={saving}
           accessibilityRole="button"
-          className="mt-3 flex-row items-center rounded-xl border border-[#A4473D]/30 bg-white p-4"
+          className="mt-3 flex-row items-center rounded-xl border p-4"
+          style={{
+            backgroundColor: isDark ? colors.card : "#FFFFFF",
+            borderColor: isDark ? `${colors.danger}66` : "#A4473D4D",
+          }}
         >
-          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#A4473D]/10">
-            <Text className="text-xl text-[#A4473D]">↺</Text>
+          <View
+            className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+            style={{
+              backgroundColor: isDark ? `${colors.danger}1A` : "#A4473D1A",
+            }}
+          >
+            <Text
+              className="text-xl"
+              style={{ color: isDark ? colors.danger : "#A4473D" }}
+            >
+              ↺
+            </Text>
           </View>
 
           <View className="flex-1">
-            <Text className="font-semibold text-[#A4473D]">Reset all data</Text>
+            <Text
+              className="font-semibold"
+              style={{ color: isDark ? colors.danger : "#A4473D" }}
+            >
+              Reset all data
+            </Text>
 
-            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+            <Text
+              className="mt-1 text-sm leading-5"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
               Delete all habits and completion history.
             </Text>
           </View>
 
-          <Text className="ml-2 text-xl text-[#A4473D]">›</Text>
+          <Text
+            className="ml-2 text-xl"
+            style={{ color: isDark ? colors.danger : "#A4473D" }}
+          >
+            ›
+          </Text>
         </Pressable>
       </View>
 
       {/* About */}
-      <Text className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         ABOUT
       </Text>
 
-      <View className="items-center rounded-3xl bg-[#EAE6DA] p-6">
-        <View className="h-14 w-14 items-center justify-center rounded-2xl bg-[#39745F]">
-          <Text className="text-2xl font-semibold text-white">S</Text>
+      <View
+        className="items-center rounded-3xl p-6"
+        style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
+      >
+        <View
+          className="h-14 w-14 items-center justify-center rounded-2xl"
+          style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
+        >
+          <Text
+            className="text-2xl font-semibold"
+            style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
+          >
+            S
+          </Text>
         </View>
 
-        <Text className="mt-4 text-xl font-semibold text-[#26382F]">
+        <Text
+          className="mt-4 text-xl font-semibold"
+          style={{ color: isDark ? colors.text : "#26382F" }}
+        >
           Stillday
         </Text>
 
-        <Text className="mt-1 text-sm text-[#85877D]">Version 1.0.0</Text>
+        <Text
+          className="mt-1 text-sm"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
+          Version 1.0.0
+        </Text>
 
-        <Text className="mt-4 text-center text-sm leading-6 text-[#6F766B]">
+        <Text
+          className="mt-4 text-center text-sm leading-6"
+          style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
+        >
           A little progress, every day.
           {"\n"}
           Build routines at your own pace.
@@ -622,12 +870,18 @@ export default function SettingsScreen() {
       </View>
 
       {saving && (
-        <Text className="mt-4 text-center text-xs text-[#85877D]">
+        <Text
+          className="mt-4 text-center text-xs"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           Saving your preferences...
         </Text>
       )}
 
-      <Text className="mt-6 text-center text-xs text-[#85877D]">
+      <Text
+        className="mt-6 text-center text-xs"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         Made for small steps and meaningful days.
       </Text>
     </ScrollView>

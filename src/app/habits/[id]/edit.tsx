@@ -15,14 +15,14 @@ import {
   View,
 } from "react-native";
 
-import { colors } from "../../../constants/theme";
+import { useAppTheme } from "../../../hooks/ThemeProvider";
 import { useHabits } from "../../../hooks/useHabits";
 import type { Habit } from "../../../types/habit";
-
 
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { habits, loading, updateHabit } = useHabits();
+  const { colors, isDark } = useAppTheme();
 
   const habit = habits.find((item) => item.id === id);
 
@@ -128,28 +128,46 @@ export default function EditHabitScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#F7F5EF]">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator
+          size="large"
+          color={isDark ? colors.primary : "#39745F"}
+        />
       </View>
     );
   }
 
   if (!habit) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#F7F5EF] px-6">
-        <Text className="text-xl font-semibold text-[#26382F]">
+      <View
+        className="flex-1 items-center justify-center px-6"
+        style={{ backgroundColor: colors.background }}
+      >
+        <Text className="text-xl font-semibold" style={{ color: colors.text }}>
           Habit not found
         </Text>
 
-        <Text className="mt-2 text-center text-base text-[#85877D]">
+        <Text
+          className="mt-2 text-center text-base"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           This habit may have been deleted.
         </Text>
 
         <Pressable
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 rounded-full bg-[#39745F] px-6 py-3"
+          className="mt-6 rounded-full px-6 py-3"
+          style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
         >
-          <Text className="font-semibold text-white">Back to Today</Text>
+          <Text
+            className="font-semibold"
+            style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
+          >
+            Back to Today
+          </Text>
         </Pressable>
       </View>
     );
@@ -157,12 +175,14 @@ export default function EditHabitScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-[#F7F5EF]"
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        style={{ backgroundColor: colors.background }}
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingTop: 48,
@@ -171,25 +191,42 @@ export default function EditHabitScreen() {
       >
         {/* Back button */}
         <Pressable onPress={() => router.back()} className="self-start py-2">
-          <Text className="text-base font-medium text-[#39745F]">← Cancel</Text>
+          <Text
+            className="text-base font-medium"
+            style={{ color: isDark ? colors.primary : "#39745F" }}
+          >
+            ← Cancel
+          </Text>
         </Pressable>
 
         {/* Heading */}
-        <Text className="mt-8 text-sm font-medium uppercase tracking-widest text-[#85877D]">
+        <Text
+          className="mt-8 text-sm font-medium uppercase tracking-widest"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           REFINE YOUR ROUTINE
         </Text>
 
-        <Text className="mt-3 text-3xl font-semibold text-[#26382F]">
+        <Text
+          className="mt-3 text-3xl font-semibold"
+          style={{ color: colors.text }}
+        >
           Make it your own.
         </Text>
 
-        <Text className="mt-3 text-base leading-6 text-[#85877D]">
+        <Text
+          className="mt-3 text-base leading-6"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           Small adjustments can help a habit fit your life better.
         </Text>
 
         {/* Habit name */}
         <View className="mt-9">
-          <Text className="mb-3 text-sm font-semibold text-[#26382F]">
+          <Text
+            className="mb-3 text-sm font-semibold"
+            style={{ color: colors.text }}
+          >
             Habit name *
           </Text>
 
@@ -197,51 +234,88 @@ export default function EditHabitScreen() {
             value={title}
             onChangeText={setTitle}
             placeholder="e.g. Read for 10 minutes"
-            placeholderTextColor="#A5A69D"
+            placeholderTextColor={isDark ? colors.textSecondary : "#A5A69D"}
             maxLength={60}
             returnKeyType="next"
             accessibilityLabel="Habit name"
-            className="rounded-2xl border border-[#DCD8CC] bg-white px-4 py-4 text-base text-[#26382F]"
+            className="rounded-2xl border px-4 py-4 text-base"
+            style={{
+              backgroundColor: isDark ? colors.card : "#FFFFFF",
+              borderColor: colors.border,
+              color: colors.text,
+            }}
           />
 
-          <Text className="mt-2 text-right text-xs text-[#85877D]">
+          <Text
+            className="mt-2 text-right text-xs"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
             {title.length}/60
           </Text>
         </View>
 
         {/* Description */}
         <View className="mt-5">
-          <Text className="mb-3 text-sm font-semibold text-[#26382F]">
+          <Text
+            className="mb-3 text-sm font-semibold"
+            style={{ color: colors.text }}
+          >
             Description
-            <Text className="font-normal text-[#85877D]"> (optional)</Text>
+            <Text
+              className="font-normal"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
+              {" "}
+              (optional)
+            </Text>
           </Text>
 
           <TextInput
             value={description}
             onChangeText={setDescription}
             placeholder="Why does this habit matter to you?"
-            placeholderTextColor="#A5A69D"
+            placeholderTextColor={isDark ? colors.textSecondary : "#A5A69D"}
             maxLength={120}
             multiline
             textAlignVertical="top"
             accessibilityLabel="Habit description"
-            className="min-h-28 rounded-2xl border border-[#DCD8CC] bg-white px-4 py-4 text-base text-[#26382F]"
+            className="min-h-28 rounded-2xl border px-4 py-4 text-base"
+            style={{
+              backgroundColor: isDark ? colors.card : "#FFFFFF",
+              borderColor: colors.border,
+              color: colors.text,
+            }}
           />
 
-          <Text className="mt-2 text-right text-xs text-[#85877D]">
+          <Text
+            className="mt-2 text-right text-xs"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
             {description.length}/120
           </Text>
         </View>
 
         {/* Habit reminder */}
-        <View className="mt-8 rounded-3xl border border-[#DCD8CC] bg-white p-5">
+        <View
+          className="mt-8 rounded-3xl border p-5"
+          style={{
+            backgroundColor: isDark ? colors.card : "#FFFFFF",
+            borderColor: colors.border,
+          }}
+        >
           <View className="flex-row items-center justify-between">
             <View className="mr-4 flex-1">
-              <Text className="text-base font-semibold text-[#26382F]">
+              <Text
+                className="text-base font-semibold"
+                style={{ color: colors.text }}
+              >
                 Habit reminder
               </Text>
 
-              <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+              <Text
+                className="mt-1 text-sm leading-5"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 Get a gentle nudge to complete this habit.
               </Text>
             </View>
@@ -251,9 +325,14 @@ export default function EditHabitScreen() {
               accessibilityLabel="Enable habit reminder"
               accessibilityState={{ checked: reminderEnabled }}
               onPress={() => setReminderEnabled((enabled) => !enabled)}
-              className={`h-8 w-14 justify-center rounded-full px-1 ${
-                reminderEnabled ? "bg-[#39745F]" : "bg-[#DCD8CC]"
-              }`}
+              className="h-8 w-14 justify-center rounded-full px-1"
+              style={{
+                backgroundColor: reminderEnabled
+                  ? isDark
+                    ? colors.primary
+                    : "#39745F"
+                  : colors.border,
+              }}
             >
               <View
                 className={`h-6 w-6 rounded-full bg-white ${
@@ -264,8 +343,14 @@ export default function EditHabitScreen() {
           </View>
 
           {reminderEnabled && (
-            <View className="mt-5 border-t border-[#DCD8CC] pt-4">
-              <Text className="text-sm font-medium text-[#85877D]">
+            <View
+              className="mt-5 border-t pt-4"
+              style={{ borderColor: colors.border }}
+            >
+              <Text
+                className="text-sm font-medium"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 REMIND ME AT
               </Text>
 
@@ -273,16 +358,25 @@ export default function EditHabitScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Choose reminder time"
                 onPress={openTimePicker}
-                className="mt-3 flex-row items-center justify-between rounded-2xl bg-[#F7F5EF] px-4 py-4"
+                className="mt-3 flex-row items-center justify-between rounded-2xl px-4 py-4"
+                style={{
+                  backgroundColor: isDark ? colors.surface : "#F7F5EF",
+                }}
               >
-                <Text className="text-lg font-semibold text-[#26382F]">
+                <Text
+                  className="text-lg font-semibold"
+                  style={{ color: colors.text }}
+                >
                   {reminderTime.toLocaleTimeString([], {
                     hour: "numeric",
                     minute: "2-digit",
                   })}
                 </Text>
 
-                <Text className="text-sm font-semibold text-[#39745F]">
+                <Text
+                  className="text-sm font-semibold"
+                  style={{ color: isDark ? colors.primary : "#39745F" }}
+                >
                   Change time →
                 </Text>
               </Pressable>
@@ -300,18 +394,30 @@ export default function EditHabitScreen() {
                       }
                     }}
                     onDismiss={() => setShowTimePicker(false)}
+                    themeVariant={isDark ? "dark" : "light"}
                   />
 
                   <Pressable
                     onPress={() => setShowTimePicker(false)}
-                    className="mt-2 items-center rounded-xl bg-[#EAE6DA] py-3"
+                    className="mt-2 items-center rounded-xl py-3"
+                    style={{
+                      backgroundColor: isDark ? colors.muted : "#EAE6DA",
+                    }}
                   >
-                    <Text className="font-semibold text-[#39745F]">Done</Text>
+                    <Text
+                      className="font-semibold"
+                      style={{ color: isDark ? colors.primary : "#39745F" }}
+                    >
+                      Done
+                    </Text>
                   </Pressable>
                 </View>
               )}
 
-              <Text className="mt-3 text-xs leading-5 text-[#85877D]">
+              <Text
+                className="mt-3 text-xs leading-5"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 You can change or disable this reminder whenever you like.
               </Text>
             </View>
@@ -319,12 +425,25 @@ export default function EditHabitScreen() {
         </View>
 
         {/* Encouragement card */}
-        <View className="mt-8 rounded-2xl bg-[#EAE6DA] p-5">
-          <Text className="text-sm font-semibold text-[#294D3C]">
+        <View
+          className="mt-8 rounded-2xl p-5"
+          style={{
+            backgroundColor: isDark ? colors.surface : "#EAE6DA",
+            borderWidth: isDark ? 1 : 0,
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-sm font-semibold"
+            style={{ color: isDark ? colors.primaryDark : "#294D3C" }}
+          >
             Progress, not perfection.
           </Text>
 
-          <Text className="mt-2 text-sm leading-5 text-[#6F766B]">
+          <Text
+            className="mt-2 text-sm leading-5"
+            style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
+          >
             Your routine doesn't have to be perfect. Make changes that help you
             keep showing up.
           </Text>
@@ -335,11 +454,15 @@ export default function EditHabitScreen() {
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
-          className={`mt-8 items-center rounded-2xl bg-[#39745F] py-4 ${
+          className={`mt-8 items-center rounded-2xl py-4 ${
             saving ? "opacity-60" : ""
           }`}
+          style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
         >
-          <Text className="text-base font-semibold text-white">
+          <Text
+            className="text-base font-semibold"
+            style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
+          >
             {saving ? "Saving changes..." : "Save changes"}
           </Text>
         </Pressable>
@@ -350,7 +473,12 @@ export default function EditHabitScreen() {
           disabled={saving}
           className="mt-3 items-center rounded-2xl py-4"
         >
-          <Text className="text-base font-semibold text-[#85877D]">Cancel</Text>
+          <Text
+            className="text-base font-semibold"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
+            Cancel
+          </Text>
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>

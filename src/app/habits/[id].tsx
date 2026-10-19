@@ -1,15 +1,15 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
-import { colors } from "../../constants/theme";
+import { useAppTheme } from "../../hooks/ThemeProvider";
 import { useCompletions } from "../../hooks/useCompletions";
 import { useHabits } from "../../hooks/useHabits";
 import { calculateStreaks } from "../../utils/streaks";
@@ -18,6 +18,7 @@ export default function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { habits, loading, deleteHabit } = useHabits();
   const { completions } = useCompletions();
+  const { colors, isDark } = useAppTheme();
   const [deleting, setDeleting] = useState(false);
 
   const habit = habits.find((item) => item.id === id);
@@ -56,28 +57,46 @@ export default function HabitDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#F7F5EF]">
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View
+        className="flex-1 items-center justify-center"
+        style={{ backgroundColor: colors.background }}
+      >
+        <ActivityIndicator
+          size="large"
+          color={isDark ? colors.primary : "#39745F"}
+        />
       </View>
     );
   }
 
   if (!habit) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#F7F5EF] px-6">
-        <Text className="text-xl font-semibold text-[#26382F]">
+      <View
+        className="flex-1 items-center justify-center px-6"
+        style={{ backgroundColor: colors.background }}
+      >
+        <Text className="text-xl font-semibold" style={{ color: colors.text }}>
           Habit not found
         </Text>
 
-        <Text className="mt-2 text-center text-base text-[#85877D]">
+        <Text
+          className="mt-2 text-center text-base"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
           This habit may have been deleted.
         </Text>
 
         <Pressable
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 rounded-full bg-[#39745F] px-6 py-3"
+          className="mt-6 rounded-full px-6 py-3"
+          style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
         >
-          <Text className="font-semibold text-white">Back to Today</Text>
+          <Text
+            className="font-semibold"
+            style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
+          >
+            Back to Today
+          </Text>
         </Pressable>
       </View>
     );
@@ -91,7 +110,8 @@ export default function HabitDetailScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-[#F7F5EF]"
+      className="flex-1"
+      style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
         paddingHorizontal: 24,
         paddingTop: 64,
@@ -99,69 +119,128 @@ export default function HabitDetailScreen() {
       }}
     >
       <Pressable onPress={() => router.back()} className="self-start py-2">
-        <Text className="text-base font-medium text-[#39745F]">← Back</Text>
+        <Text
+          className="text-base font-medium"
+          style={{ color: isDark ? colors.primary : "#39745F" }}
+        >
+          ← Back
+        </Text>
       </Pressable>
 
-      <Text className="mt-10 text-sm font-medium uppercase tracking-widest text-[#85877D]">
+      <Text
+        className="mt-10 text-sm font-medium uppercase tracking-widest"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         YOUR HABIT
       </Text>
 
-      <Text className="mt-3 text-3xl font-semibold leading-10 text-[#26382F]">
+      <Text
+        className="mt-3 text-3xl font-semibold leading-10"
+        style={{ color: colors.text }}
+      >
         {habit.title}
       </Text>
 
-      <Text className="mt-4 text-base leading-7 text-[#85877D]">
+      <Text
+        className="mt-4 text-base leading-7"
+        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+      >
         {habit.description || "One small step at a time."}
       </Text>
 
       {streaks && (
-        <View className="mt-8 rounded-3xl border border-[#DCD8CC] bg-white p-5">
-          <Text className="text-sm font-medium uppercase tracking-widest text-[#85877D]">
+        <View
+          className="mt-8 rounded-3xl border p-5"
+          style={{
+            backgroundColor: isDark ? colors.card : "#FFFFFF",
+            borderColor: colors.border,
+          }}
+        >
+          <Text
+            className="text-sm font-medium uppercase tracking-widest"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
             YOUR PROGRESS
           </Text>
 
           <View className="mt-5 flex-row">
             <View className="flex-1">
-              <Text className="text-3xl font-semibold text-[#39745F]">
+              <Text
+                className="text-3xl font-semibold"
+                style={{ color: isDark ? colors.primary : "#39745F" }}
+              >
                 {streaks.currentStreak}
               </Text>
-              <Text className="mt-1 text-sm text-[#85877D]">
+              <Text
+                className="mt-1 text-sm"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 Current streak
               </Text>
-              <Text className="mt-1 text-xs text-[#85877D]">
+              <Text
+                className="mt-1 text-xs"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 {streaks.currentStreak === 1 ? "day" : "days"}
               </Text>
             </View>
 
-            <View className="mx-3 w-px bg-[#DCD8CC]" />
+            <View
+              className="mx-3 w-px"
+              style={{ backgroundColor: colors.border }}
+            />
 
             <View className="flex-1">
-              <Text className="text-3xl font-semibold text-[#39745F]">
+              <Text
+                className="text-3xl font-semibold"
+                style={{ color: isDark ? colors.primary : "#39745F" }}
+              >
                 {streaks.bestStreak}
               </Text>
-              <Text className="mt-1 text-sm text-[#85877D]">Best streak</Text>
-              <Text className="mt-1 text-xs text-[#85877D]">
+              <Text
+                className="mt-1 text-sm"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
+                Best streak
+              </Text>
+              <Text
+                className="mt-1 text-xs"
+                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+              >
                 {streaks.bestStreak === 1 ? "day" : "days"}
               </Text>
             </View>
           </View>
 
-          <View className="mt-5 border-t border-[#DCD8CC] pt-4">
+          <View
+            className="mt-5 border-t pt-4"
+            style={{ borderColor: colors.border }}
+          >
             <View className="flex-row items-center justify-between">
-              <Text className="text-sm font-medium text-[#26382F]">
+              <Text
+                className="text-sm font-medium"
+                style={{ color: colors.text }}
+              >
                 Last 7 days
               </Text>
 
-              <Text className="text-sm font-semibold text-[#39745F]">
+              <Text
+                className="text-sm font-semibold"
+                style={{ color: isDark ? colors.primary : "#39745F" }}
+              >
                 {streaks.completedDaysThisWeek}/7 days
               </Text>
             </View>
 
-            <View className="mt-3 h-2 overflow-hidden rounded-full bg-[#EAE6DA]">
+            <View
+              className="mt-3 h-2 overflow-hidden rounded-full"
+              style={{ backgroundColor: isDark ? colors.muted : "#EAE6DA" }}
+            >
               <View
-                className="h-full rounded-full bg-[#39745F]"
+                className="h-full rounded-full"
                 style={{
                   width: `${(streaks.completedDaysThisWeek / 7) * 100}%`,
+                  backgroundColor: isDark ? colors.primary : "#39745F",
                 }}
               />
             </View>
@@ -169,16 +248,37 @@ export default function HabitDetailScreen() {
         </View>
       )}
 
-      <View className="mt-8 rounded-3xl bg-[#EAE6DA] p-6">
-        <Text className="text-sm font-medium text-[#85877D]">CREATED ON</Text>
+      <View
+        className="mt-8 rounded-3xl p-6"
+        style={{
+          backgroundColor: isDark ? colors.surface : "#EAE6DA",
+          borderWidth: isDark ? 1 : 0,
+          borderColor: colors.border,
+        }}
+      >
+        <Text
+          className="text-sm font-medium"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
+          CREATED ON
+        </Text>
 
-        <Text className="mt-2 text-lg font-semibold text-[#26382F]">
+        <Text
+          className="mt-2 text-lg font-semibold"
+          style={{ color: colors.text }}
+        >
           {createdDate}
         </Text>
 
-        <View className="my-5 h-px bg-[#DCD8CC]" />
+        <View
+          className="my-5 h-px"
+          style={{ backgroundColor: colors.border }}
+        />
 
-        <Text className="text-sm leading-6 text-[#6F766B]">
+        <Text
+          className="text-sm leading-6"
+          style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
+        >
           Small actions, repeated over time, can become meaningful routines.
           Focus on showing up rather than being perfect.
         </Text>
@@ -191,17 +291,30 @@ export default function HabitDetailScreen() {
             params: { id: habit.id },
           })
         }
-        className="mt-8 items-center rounded-2xl bg-[#39745F] py-4"
+        className="mt-8 items-center rounded-2xl py-4"
+        style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
       >
-        <Text className="text-base font-semibold text-white">Edit habit</Text>
+        <Text
+          className="text-base font-semibold"
+          style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
+        >
+          Edit habit
+        </Text>
       </Pressable>
 
       <Pressable
         onPress={handleDelete}
         disabled={deleting}
-        className="mt-4 items-center rounded-2xl border border-[#DCD8CC] py-4"
+        className="mt-4 items-center rounded-2xl border py-4"
+        style={{
+          borderColor: isDark ? `${colors.danger}99` : "#DCD8CC",
+          backgroundColor: isDark ? `${colors.danger}0D` : "transparent",
+        }}
       >
-        <Text className="text-base font-semibold text-[#A4473D]">
+        <Text
+          className="text-base font-semibold"
+          style={{ color: isDark ? colors.danger : "#A4473D" }}
+        >
           {deleting ? "Deleting..." : "Delete habit"}
         </Text>
       </Pressable>
