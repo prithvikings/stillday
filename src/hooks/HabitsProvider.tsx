@@ -3,11 +3,17 @@ import {
     useCallback,
     useContext,
     useEffect,
+    useRef,
     useState,
     type ReactNode,
 } from "react";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getHabits, saveHabits } from "../services/storage";
 import type { Habit } from "../types/habit";
+import { useSharedCompletions } from "./CompletionsProvider";
+
+const INITIALIZED_KEY = "@stillday/habits_initialized";
 
 type HabitsContextValue = {
   habits: Habit[];
@@ -44,25 +50,46 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const habitsRef = useRef<Habit[]>([]);
+  const writeQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const loadingRef = useRef(true);
+
+  const { removeHabitCompletions } = useSharedCompletions();
+
   useEffect(() => {
     let active = true;
 
     async function load() {
       try {
-        const stored = await getHabits();
+        const [stored, initialized] = await Promise.all([
+          getHabits(),
+          AsyncStorage.getItem(INITIALIZED_KEY),
+        ]);
 
         if (!active) return;
 
-        if (stored.length > 0) {
-          setHabits(stored);
-        } else {
-          await saveHabits(initialHabits);
-          if (active) setHabits(initialHabits);
+        let next = stored;
+
+        if (initialized === null) {
+          if (stored.length === 0) {
+            await saveHabits(initialHabits);
+            next = initialHabits;
+          }
+
+          await AsyncStorage.setItem(INITIALIZED_KEY, "true");
         }
+
+        if (!active) return;
+
+        habitsRef.current = next;
+        setHabits(next);
       } catch (error) {
         console.error("Failed to load habits:", error);
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          loadingRef.current = false;
+          setLoading(false);
+        }
       }
     }
 
@@ -73,36 +100,102 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const enqueueSave = useCallback((next: Habit[]) => {
+    const saveOperation = writeQueueRef.current.then(() => saveHabits(next));
+
+    // Keep the queue usable even if a previous save fails.
+    writeQueueRef.current = saveOperation.catch((error) => {
+      console.error("Failed to save habits:", error);
+    });
+
+    return saveOperation;
+  }, []);
+
   const addHabit = useCallback(
     async (habit: Habit) => {
-      const next = [...habits, habit];
-      await saveHabits(next);
+      if (loadingRef.current) {
+        throw new Error("Habits are still loading.");
+      }
+
+      const current = habitsRef.current;
+
+      if (current.some((item) => item.id === habit.id)) {
+        throw new Error("A habit with this ID already exists.");
+      }
+
+      const next = [...current, habit];
+
+      // Save first so a failed write doesn't change the visible state.
+      await enqueueSave(next);
+
+      habitsRef.current = next;
       setHabits(next);
     },
-    [habits],
+    [enqueueSave],
   );
 
   const updateHabit = useCallback(
     async (habit: Habit) => {
-      const next = habits.map((item) => (item.id === habit.id ? habit : item));
-      await saveHabits(next);
+      if (loadingRef.current) {
+        throw new Error("Habits are still loading.");
+      }
+
+      const current = habitsRef.current;
+
+      if (!current.some((item) => item.id === habit.id)) {
+        throw new Error("Habit not found.");
+      }
+
+      const next = current.map((item) => (item.id === habit.id ? habit : item));
+
+      await enqueueSave(next);
+
+      habitsRef.current = next;
       setHabits(next);
     },
-    [habits],
+    [enqueueSave],
   );
 
   const deleteHabit = useCallback(
     async (id: string) => {
-      const next = habits.filter((habit) => habit.id !== id);
-      await saveHabits(next);
-      setHabits(next);
-    },
-    [habits],
-  );
+      if (loadingRef.current) {
+        throw new Error("Habits are still loading.");
+      }
 
+      const current = habitsRef.current;
+
+      if (!current.some((item) => item.id === id)) {
+        return;
+      }
+
+      // Save the updated habit list first.
+      const next = current.filter((item) => item.id !== id);
+      await enqueueSave(next);
+
+      habitsRef.current = next;
+      setHabits(next);
+
+      // Clean up history after the habit deletion succeeds.
+      try {
+        await removeHabitCompletions(id);
+      } catch (error) {
+        console.error(
+          "Habit was deleted, but its completion history could not be cleaned up:",
+          error,
+        );
+      }
+    },
+    [enqueueSave, removeHabitCompletions],
+  );
   return (
     <HabitsContext.Provider
-      value={{ habits, loading, addHabit, updateHabit, deleteHabit }}
+      value={{
+        habits,
+        loading,
+        addHabit,
+        updateHabit,
+        deleteHabit,
+      }}
     >
       {children}
     </HabitsContext.Provider>
