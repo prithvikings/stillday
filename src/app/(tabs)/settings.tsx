@@ -1,31 +1,58 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Pressable,
-    ScrollView,
-    Switch,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
 } from "react-native";
+import { useSharedCompletions } from "../../hooks/CompletionsProvider";
+import { useHabits } from "../../hooks/HabitsProvider";
+import { exportBackup } from "../../services/backup";
 
 const SETTINGS_KEY = "@stillday/settings";
 
 type AppSettings = {
-  appearance: "light" | "dark";
+  appearance: "system" | "light" | "dark";
+  weekStartsOn: "monday" | "sunday";
   remindersEnabled: boolean;
+  reminderHour: number;
+  reminderMinute: number;
 };
 
 const DEFAULT_SETTINGS: AppSettings = {
-  appearance: "light",
+  appearance: "system",
+  weekStartsOn: "monday",
   remindersEnabled: false,
+  reminderHour: 8,
+  reminderMinute: 0,
 };
 
 export default function SettingsScreen() {
+  const { habits, replaceHabits, resetHabits } = useHabits();
+
+  const { completions, replaceCompletions, resetCompletions } =
+    useSharedCompletions();
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showReminderTimePicker, setShowReminderTimePicker] = useState(false);
+
+  function formatReminderTime(hour: number, minute: number) {
+    const date = new Date();
+    date.setHours(hour, minute, 0, 0);
+
+    return date.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
 
   useEffect(() => {
     let active = true;
@@ -38,8 +65,29 @@ export default function SettingsScreen() {
           const parsed = JSON.parse(stored);
 
           setSettings({
-            appearance: parsed.appearance === "dark" ? "dark" : "light",
+            appearance:
+              parsed.appearance === "dark" || parsed.appearance === "light"
+                ? parsed.appearance
+                : "system",
+
+            weekStartsOn:
+              parsed.weekStartsOn === "sunday" ? "sunday" : "monday",
+
             remindersEnabled: parsed.remindersEnabled === true,
+
+            reminderHour:
+              typeof parsed.reminderHour === "number" &&
+              parsed.reminderHour >= 0 &&
+              parsed.reminderHour <= 23
+                ? parsed.reminderHour
+                : 8,
+
+            reminderMinute:
+              typeof parsed.reminderMinute === "number" &&
+              parsed.reminderMinute >= 0 &&
+              parsed.reminderMinute <= 59
+                ? parsed.reminderMinute
+                : 0,
           });
         }
       } catch (error) {
@@ -81,6 +129,153 @@ export default function SettingsScreen() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleExportData() {
+    try {
+      await exportBackup();
+    } catch (error) {
+      console.error("Failed to export Stillday data:", error);
+
+      Alert.alert(
+        "Export failed",
+        "We couldn't create your backup. Please try again.",
+      );
+    }
+  }
+
+  async function handleImportData() {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/json", "text/json"],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        return;
+      }
+
+      const file = result.assets[0];
+      const json = await FileSystem.File.fromUri(file.uri).text();
+
+      // Validate the backup before asking to replace existing data.
+      const { parseBackup } = await import("../../services/importBackup");
+      const backup = parseBackup(json);
+
+      Alert.alert(
+        "Replace your data?",
+        "Importing this backup will replace your current habits and completion history. Export your current data first if you want to keep a separate copy.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Replace data",
+            style: "destructive",
+            onPress: () => {
+              void (async () => {
+                // Keep the current state so we can attempt to restore it
+                // if either replacement fails.
+                const previousHabits = habits;
+                const previousCompletions = completions;
+
+                try {
+                  await replaceHabits(backup.data.habits);
+                  await replaceCompletions(backup.data.completions);
+
+                  Alert.alert(
+                    "Import complete",
+                    "Your habits and completion history have been restored.",
+                  );
+                } catch (error) {
+                  console.error("Failed to import Stillday data:", error);
+
+                  // Best-effort rollback through the providers.
+                  try {
+                    await replaceHabits(previousHabits);
+                    await replaceCompletions(previousCompletions);
+                  } catch (rollbackError) {
+                    console.error(
+                      "Failed to restore the previous app state:",
+                      rollbackError,
+                    );
+                  }
+
+                  Alert.alert(
+                    "Import failed",
+                    error instanceof Error
+                      ? error.message
+                      : "We couldn't import this backup. Please try again.",
+                  );
+                }
+              })();
+            },
+          },
+        ],
+      );
+    } catch (error) {
+      console.error("Failed to select or validate Stillday backup:", error);
+
+      Alert.alert(
+        "Import failed",
+        error instanceof Error
+          ? error.message
+          : "We couldn't open that file. Please select a valid Stillday JSON backup.",
+      );
+    }
+  }
+
+  async function handleResetData() {
+    Alert.alert(
+      "Reset all data?",
+      "This will permanently delete all your habits and completion history from this device. Your settings will be kept. This action cannot be undone unless you have a backup.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Reset data",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              const previousHabits = habits;
+              const previousCompletions = completions;
+
+              try {
+                await resetHabits();
+                await resetCompletions();
+
+                Alert.alert(
+                  "Data reset",
+                  "Your habits and completion history have been cleared.",
+                );
+              } catch (error) {
+                console.error("Failed to reset Stillday data:", error);
+
+                // Attempt to restore the previous data if resetting fails.
+                try {
+                  await replaceHabits(previousHabits);
+                  await replaceCompletions(previousCompletions);
+                } catch (rollbackError) {
+                  console.error(
+                    "Failed to restore data after reset:",
+                    rollbackError,
+                  );
+                }
+
+                Alert.alert(
+                  "Reset failed",
+                  "We couldn't reset all your data. Please check your data before trying again.",
+                );
+              }
+            })();
+          },
+        },
+      ],
+    );
   }
 
   if (loading) {
@@ -129,59 +324,116 @@ export default function SettingsScreen() {
         </Text>
 
         <View className="mt-4 flex-row">
-          <Pressable
-            disabled={saving}
-            onPress={() =>
-              updateSettings({
-                ...settings,
-                appearance: "light",
-              })
-            }
-            className={`mr-3 flex-1 items-center rounded-xl border p-4 ${
-              settings.appearance === "light"
-                ? "border-[#39745F] bg-[#F7F5EF]"
-                : "border-[#DCD8CC] bg-white"
-            }`}
-          >
-            <Text className="text-lg">☀</Text>
+          {(["system", "light", "dark"] as const).map((appearance) => {
+            const selected = settings.appearance === appearance;
 
-            <Text className="mt-2 font-semibold text-[#26382F]">Light</Text>
+            const label =
+              appearance === "system"
+                ? "System"
+                : appearance === "light"
+                  ? "Light"
+                  : "Dark";
 
-            {settings.appearance === "light" && (
-              <Text className="mt-1 text-xs text-[#39745F]">Selected</Text>
-            )}
-          </Pressable>
+            const icon =
+              appearance === "system"
+                ? "▣"
+                : appearance === "light"
+                  ? "☀"
+                  : "☾";
 
-          <Pressable
-            disabled={saving}
-            onPress={() =>
-              updateSettings({
-                ...settings,
-                appearance: "dark",
-              })
-            }
-            className={`flex-1 items-center rounded-xl border p-4 ${
-              settings.appearance === "dark"
-                ? "border-[#39745F] bg-[#EAE6DA]"
-                : "border-[#DCD8CC] bg-white"
-            }`}
-          >
-            <Text className="text-lg">☾</Text>
+            return (
+              <Pressable
+                key={appearance}
+                disabled={saving}
+                onPress={() =>
+                  updateSettings({
+                    ...settings,
+                    appearance,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                className={`mr-2 flex-1 items-center rounded-xl border p-3 ${
+                  selected
+                    ? "border-[#39745F] bg-[#39745F]"
+                    : "border-[#DCD8CC] bg-[#F7F5EF]"
+                }`}
+              >
+                <Text
+                  className={`text-lg ${
+                    selected ? "text-white" : "text-[#26382F]"
+                  }`}
+                >
+                  {icon}
+                </Text>
 
-            <Text className="mt-2 font-semibold text-[#26382F]">Dark</Text>
-
-            {settings.appearance === "dark" && (
-              <Text className="mt-1 text-xs text-[#39745F]">Selected</Text>
-            )}
-          </Pressable>
+                <Text
+                  className={`mt-2 text-sm font-semibold ${
+                    selected ? "text-white" : "text-[#26382F]"
+                  }`}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
-        {settings.appearance === "dark" && (
+        {settings.appearance === "light" && (
           <Text className="mt-3 text-xs leading-5 text-[#85877D]">
             Your preference is saved. Dark theme styling across the app will be
             implemented separately.
           </Text>
         )}
+      </View>
+
+      {/* Week starts on */}
+      <Text className="mb-3 mt-8 text-sm font-semibold uppercase tracking-widest text-[#85877D]">
+        WEEK STARTS ON
+      </Text>
+
+      <View className="rounded-2xl border border-[#DCD8CC] bg-white p-4">
+        <Text className="text-base font-semibold text-[#26382F]">
+          First day of the week
+        </Text>
+
+        <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+          Choose how your weekly progress is organized.
+        </Text>
+
+        <View className="mt-4 flex-row">
+          {(["monday", "sunday"] as const).map((day) => {
+            const selected = settings.weekStartsOn === day;
+
+            return (
+              <Pressable
+                key={day}
+                disabled={saving}
+                onPress={() =>
+                  updateSettings({
+                    ...settings,
+                    weekStartsOn: day,
+                  })
+                }
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                className={`mr-2 flex-1 items-center rounded-xl border p-4 ${
+                  selected
+                    ? "border-[#39745F] bg-[#39745F]"
+                    : "border-[#DCD8CC] bg-[#F7F5EF]"
+                }`}
+              >
+                <Text
+                  className={`font-semibold ${
+                    selected ? "text-white" : "text-[#26382F]"
+                  }`}
+                >
+                  {day === "monday" ? "Monday" : "Sunday"}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       {/* Reminders */}
@@ -217,7 +469,50 @@ export default function SettingsScreen() {
           accessibilityLabel="Daily reminders preference"
         />
       </View>
+      <Pressable
+        disabled={saving}
+        onPress={() => setShowReminderTimePicker(true)}
+        accessibilityRole="button"
+        className="mt-3 flex-row items-center justify-between rounded-2xl border border-[#DCD8CC] bg-white p-4"
+      >
+        <View className="flex-1">
+          <Text className="text-base font-semibold text-[#26382F]">
+            Reminder time
+          </Text>
 
+          <Text className="mt-1 text-sm text-[#85877D]">
+            Choose when you'd like your gentle reminder.
+          </Text>
+        </View>
+
+        <Text className="ml-3 font-semibold text-[#39745F]">
+          {formatReminderTime(settings.reminderHour, settings.reminderMinute)}
+          {"  ›"}
+        </Text>
+      </Pressable>
+
+      {showReminderTimePicker && (
+        <DateTimePicker
+          value={(() => {
+            const date = new Date();
+            date.setHours(settings.reminderHour, settings.reminderMinute, 0, 0);
+            return date;
+          })()}
+          mode="time"
+          display="default"
+          onValueChange={(event, selectedDate) => {
+            setShowReminderTimePicker(false);
+
+            if (event.type === "set" && selectedDate) {
+              updateSettings({
+                ...settings,
+                reminderHour: selectedDate.getHours(),
+                reminderMinute: selectedDate.getMinutes(),
+              });
+            }
+          }}
+        />
+      )}
       <Text className="mt-2 px-1 text-xs leading-5 text-[#85877D]">
         This currently saves your preference only. Scheduling actual
         notifications will be added in a later step.
@@ -234,16 +529,73 @@ export default function SettingsScreen() {
         </Text>
 
         <Text className="mt-2 text-sm leading-5 text-[#85877D]">
-          Your habits, completion history, and preferences are stored locally on
-          this device.
+          Your habits and completion history are stored locally on this device.
+          Create a backup to keep a separate copy of your progress.
         </Text>
 
         <View className="my-4 h-px bg-[#DCD8CC]" />
 
-        <Text className="text-sm leading-5 text-[#85877D]">
-          A data reset and backup options can be added once the core experience
-          is complete.
-        </Text>
+        <Pressable
+          onPress={handleExportData}
+          disabled={saving}
+          accessibilityRole="button"
+          className="flex-row items-center rounded-xl border border-[#DCD8CC] bg-[#F7F5EF] p-4"
+        >
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#EAE6DA]">
+            <Text className="text-xl text-[#39745F]">↑</Text>
+          </View>
+
+          <View className="flex-1">
+            <Text className="font-semibold text-[#26382F]">Export data</Text>
+
+            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+              Save your habits and progress as a JSON backup.
+            </Text>
+          </View>
+
+          <Text className="ml-2 text-xl text-[#39745F]">›</Text>
+        </Pressable>
+        <Pressable
+          onPress={handleImportData}
+          disabled={saving}
+          accessibilityRole="button"
+          className="mt-3 flex-row items-center rounded-xl border border-[#DCD8CC] bg-[#F7F5EF] p-4"
+        >
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#EAE6DA]">
+            <Text className="text-xl text-[#39745F]">↓</Text>
+          </View>
+
+          <View className="flex-1">
+            <Text className="font-semibold text-[#26382F]">Import data</Text>
+
+            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+              Restore habits and progress from a backup file.
+            </Text>
+          </View>
+
+          <Text className="ml-2 text-xl text-[#39745F]">›</Text>
+        </Pressable>
+
+        <Pressable
+          onPress={handleResetData}
+          disabled={saving}
+          accessibilityRole="button"
+          className="mt-3 flex-row items-center rounded-xl border border-[#A4473D]/30 bg-white p-4"
+        >
+          <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-[#A4473D]/10">
+            <Text className="text-xl text-[#A4473D]">↺</Text>
+          </View>
+
+          <View className="flex-1">
+            <Text className="font-semibold text-[#A4473D]">Reset all data</Text>
+
+            <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+              Delete all habits and completion history.
+            </Text>
+          </View>
+
+          <Text className="ml-2 text-xl text-[#A4473D]">›</Text>
+        </Pressable>
       </View>
 
       {/* About */}

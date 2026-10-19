@@ -1,11 +1,11 @@
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
-    type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 
 import { getCompletions, saveCompletions } from "../services/storage";
@@ -17,7 +17,9 @@ type CompletionsContextValue = {
   loading: boolean;
   toggleCompletion: (habitId: string) => Promise<void>;
   removeHabitCompletions: (habitId: string) => Promise<void>;
+  replaceCompletions: (next: CompletionsMap) => Promise<void>;
   today: string;
+  resetCompletions: () => Promise<void>;
 };
 
 const CompletionsContext = createContext<CompletionsContextValue | null>(null);
@@ -146,6 +148,46 @@ export function CompletionsProvider({ children }: { children: ReactNode }) {
     await saveOperation;
   }, []);
 
+  const replaceCompletions = useCallback(async (next: CompletionsMap) => {
+    if (loadingRef.current) {
+      throw new Error("Completion data is still loading.");
+    }
+
+    const saveOperation = saveQueueRef.current.then(async () => {
+      await saveCompletions(next);
+    });
+
+    saveQueueRef.current = saveOperation.catch((error) => {
+      console.error("Failed to replace completions:", error);
+    });
+
+    await saveOperation;
+
+    completionsRef.current = next;
+    setCompletions(next);
+  }, []);
+
+  const resetCompletions = useCallback(async () => {
+    if (loadingRef.current) {
+      throw new Error("Completion data is still loading.");
+    }
+
+    const emptyCompletions: CompletionsMap = {};
+
+    const saveOperation = saveQueueRef.current.then(async () => {
+      await saveCompletions(emptyCompletions);
+    });
+
+    saveQueueRef.current = saveOperation.catch((error) => {
+      console.error("Failed to reset completions:", error);
+    });
+
+    await saveOperation;
+
+    completionsRef.current = emptyCompletions;
+    setCompletions(emptyCompletions);
+  }, []);
+
   return (
     <CompletionsContext.Provider
       value={{
@@ -153,6 +195,8 @@ export function CompletionsProvider({ children }: { children: ReactNode }) {
         loading,
         toggleCompletion,
         removeHabitCompletions,
+        replaceCompletions,
+        resetCompletions,
         today: getTodayKey(),
       }}
     >

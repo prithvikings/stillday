@@ -1,11 +1,11 @@
 import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
-    type ReactNode,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
 } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,6 +21,8 @@ type HabitsContextValue = {
   addHabit: (habit: Habit) => Promise<void>;
   updateHabit: (habit: Habit) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
+  replaceHabits: (next: Habit[]) => Promise<void>;
+  resetHabits: () => Promise<void>;
 };
 
 const HabitsContext = createContext<HabitsContextValue | null>(null);
@@ -187,6 +189,39 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
     },
     [enqueueSave, removeHabitCompletions],
   );
+
+  const replaceHabits = useCallback(
+    async (next: Habit[]) => {
+      if (loadingRef.current) {
+        throw new Error("Habits are still loading.");
+      }
+
+      const saveOperation = enqueueSave(next);
+
+      await saveOperation;
+
+      habitsRef.current = next;
+      setHabits(next);
+
+      await AsyncStorage.setItem(INITIALIZED_KEY, "true");
+    },
+    [enqueueSave],
+  );
+
+  const resetHabits = useCallback(async () => {
+    if (loadingRef.current) {
+      throw new Error("Habits are still loading.");
+    }
+
+    const emptyHabits: Habit[] = [];
+
+    await enqueueSave(emptyHabits);
+
+    habitsRef.current = emptyHabits;
+    setHabits(emptyHabits);
+
+    await AsyncStorage.setItem(INITIALIZED_KEY, "true");
+  }, [enqueueSave]);
   return (
     <HabitsContext.Provider
       value={{
@@ -195,6 +230,8 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         addHabit,
         updateHabit,
         deleteHabit,
+        replaceHabits,
+        resetHabits,
       }}
     >
       {children}

@@ -1,13 +1,14 @@
 import { router } from "expo-router";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 import { useCompletions } from "../../hooks/useCompletions";
 import { useHabits } from "../../hooks/useHabits";
+import { calculateStreaks } from "../../utils/streaks";
 
 export default function TodayScreen() {
   const { habits, loading: habitsLoading } = useHabits();
@@ -113,6 +114,8 @@ export default function TodayScreen() {
       {habits.map((habit) => {
         const isCompleted = completedIds.includes(habit.id);
 
+        const streak = calculateStreaks(habit.id, completions);
+
         return (
           <View
             key={habit.id}
@@ -137,6 +140,14 @@ export default function TodayScreen() {
               <Text className="mt-1 text-sm text-[#85877D]">
                 {habit.description}
               </Text>
+
+              <View className="mt-2 flex-row items-center">
+                <Text className="text-xs font-medium text-[#39745F]">
+                  {streak.currentStreak > 0
+                    ? `🔥 ${streak.currentStreak}-day streak`
+                    : "Start your streak today"}
+                </Text>
+              </View>
 
               <Text className="mt-2 text-xs font-medium text-[#39745F]">
                 View details →
@@ -165,13 +176,32 @@ export default function TodayScreen() {
 
       {/* Empty state */}
       {habits.length === 0 && (
-        <View className="items-center rounded-2xl border border-[#DCD8CC] p-6">
-          <Text className="text-base font-semibold text-[#26382F]">
-            A fresh start
+        <View className="mt-5 items-center rounded-3xl border border-[#DCD8CC] bg-white px-6 py-10">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#EAE6DA]">
+            <Text className="text-3xl">🌱</Text>
+          </View>
+
+          <Text className="mt-5 text-xl font-semibold text-[#26382F]">
+            A fresh start.
           </Text>
 
-          <Text className="mt-2 text-center text-sm text-[#85877D]">
-            Add your first habit to begin tracking your day.
+          <Text className="mt-2 text-center text-sm leading-6 text-[#85877D]">
+            Small changes make a difference. Choose one habit you'd like to
+            build, and start at your own pace.
+          </Text>
+
+          <Pressable
+            onPress={() => router.push("/habits/new")}
+            accessibilityRole="button"
+            className="mt-6 w-full items-center rounded-full bg-[#39745F] px-5 py-4"
+          >
+            <Text className="font-semibold text-white">
+              + Create your first habit
+            </Text>
+          </Pressable>
+
+          <Text className="mt-4 text-center text-xs text-[#85877D]">
+            No pressure. Just one small step.
           </Text>
         </View>
       )}

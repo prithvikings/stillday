@@ -1,5 +1,12 @@
+import { router } from "expo-router";
 import { useMemo } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
 import { useCompletions } from "../../hooks/useCompletions";
 import { useHabits } from "../../hooks/useHabits";
@@ -40,11 +47,15 @@ export default function InsightsScreen() {
     const dailyStats = days.map((day) => {
       const completedIds = completions[day.key] ?? [];
 
-      const completedCount = habits.filter((habit) =>
+      const eligibleHabits = habits.filter(
+        (habit) => habit.createdAt.slice(0, 10) <= day.key,
+      );
+
+      const completedCount = eligibleHabits.filter((habit) =>
         completedIds.includes(habit.id),
       ).length;
 
-      const total = habits.length;
+      const total = eligibleHabits.length;
       const rate = total > 0 ? completedCount / total : 0;
 
       return {
@@ -55,7 +66,10 @@ export default function InsightsScreen() {
       };
     });
 
-    const possibleCompletions = habits.length * days.length;
+    const possibleCompletions = dailyStats.reduce(
+      (sum, day) => sum + day.total,
+      0,
+    );
 
     const totalCompletions = dailyStats.reduce(
       (sum, day) => sum + day.completedCount,
@@ -66,24 +80,31 @@ export default function InsightsScreen() {
       possibleCompletions > 0 ? totalCompletions / possibleCompletions : 0;
 
     const habitStats = habits.map((habit) => {
-      const completedDays = days.filter((day) =>
+      const eligibleDays = days.filter(
+        (day) => habit.createdAt.slice(0, 10) <= day.key,
+      );
+
+      const completedDays = eligibleDays.filter((day) =>
         (completions[day.key] ?? []).includes(habit.id),
       ).length;
 
       return {
         ...habit,
         completedDays,
-        rate: completedDays / days.length,
+        eligibleDays: eligibleDays.length,
+        rate: eligibleDays.length > 0 ? completedDays / eligibleDays.length : 0,
       };
     });
 
-    const bestHabit = [...habitStats].sort((a, b) => {
-      if (b.rate !== a.rate) {
-        return b.rate - a.rate;
-      }
+    const bestHabit = [...habitStats]
+      .filter((habit) => habit.completedDays > 0)
+      .sort((a, b) => {
+        if (b.rate !== a.rate) {
+          return b.rate - a.rate;
+        }
 
-      return b.completedDays - a.completedDays;
-    })[0];
+        return b.completedDays - a.completedDays;
+      })[0];
 
     return {
       dailyStats,
@@ -99,6 +120,17 @@ export default function InsightsScreen() {
       <View className="flex-1 items-center justify-center bg-[#F7F5EF]">
         <ActivityIndicator size="large" color="#39745F" />
       </View>
+    );
+  }
+
+  {
+    habits.length > 0 && (
+      <>
+        {/* Keep the existing weekly completion card here */}
+        {/* Keep the existing summary cards here */}
+        {/* Keep the existing weekly activity chart here */}
+        {/* Keep the existing best-performing habit card here */}
+      </>
     );
   }
 
@@ -124,6 +156,34 @@ export default function InsightsScreen() {
       <Text className="mt-2 text-base leading-6 text-[#85877D]">
         Small steps add up. Here's your progress over the last seven days.
       </Text>
+
+      {/* Empty state for users without habits */}
+      {habits.length === 0 && (
+        <View className="mt-8 items-center rounded-3xl border border-[#DCD8CC] bg-white px-6 py-10">
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#EAE6DA]">
+            <Text className="text-3xl">🌱</Text>
+          </View>
+
+          <Text className="mt-5 text-center text-xl font-semibold text-[#26382F]">
+            Your progress starts here.
+          </Text>
+
+          <Text className="mt-2 text-center text-sm leading-6 text-[#85877D]">
+            Build a routine, show up at your own pace, and your weekly insights
+            will grow along with you.
+          </Text>
+
+          <Pressable
+            onPress={() => router.push("/habits/new")}
+            accessibilityRole="button"
+            className="mt-6 w-full items-center rounded-full bg-[#39745F] px-5 py-4"
+          >
+            <Text className="font-semibold text-white">
+              + Create your first habit
+            </Text>
+          </Pressable>
+        </View>
+      )}
 
       {/* Weekly completion card */}
       <View className="mt-8 rounded-3xl bg-[#294D3C] p-6">
@@ -230,8 +290,10 @@ export default function InsightsScreen() {
             </Text>
 
             <Text className="mt-2 text-sm leading-5 text-[#6F766B]">
-              Completed on {analytics.bestHabit.completedDays} of the last 7
-              days. Keep finding your own rhythm.
+              Completed on {analytics.bestHabit.completedDays} of{" "}
+              {analytics.bestHabit.eligibleDays} eligible{" "}
+              {analytics.bestHabit.eligibleDays === 1 ? "day" : "days"}. Keep
+              finding your own rhythm.
             </Text>
 
             <View className="mt-4 flex-row items-center justify-between">

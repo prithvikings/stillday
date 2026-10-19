@@ -4,4 +4,10 @@ export type Habit = {
   description: string;
   createdAt: string;
   color?: string;
+
+  // Optional reminder settings for this habit.
+  reminderEnabled?: boolean;
+  reminderHour?: number;
+  reminderMinute?: number;
+  reminderNotificationId?: string;
 };

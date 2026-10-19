@@ -10,14 +10,18 @@ import {
 } from "react-native";
 
 import { colors } from "../../constants/theme";
+import { useCompletions } from "../../hooks/useCompletions";
 import { useHabits } from "../../hooks/useHabits";
+import { calculateStreaks } from "../../utils/streaks";
 
 export default function HabitDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { habits, loading, deleteHabit } = useHabits();
+  const { completions } = useCompletions();
   const [deleting, setDeleting] = useState(false);
 
   const habit = habits.find((item) => item.id === id);
+  const streaks = habit ? calculateStreaks(habit.id, completions) : null;
 
   async function handleDelete() {
     if (!habit || deleting) return;
@@ -109,6 +113,61 @@ export default function HabitDetailScreen() {
       <Text className="mt-4 text-base leading-7 text-[#85877D]">
         {habit.description || "One small step at a time."}
       </Text>
+
+      {streaks && (
+        <View className="mt-8 rounded-3xl border border-[#DCD8CC] bg-white p-5">
+          <Text className="text-sm font-medium uppercase tracking-widest text-[#85877D]">
+            YOUR PROGRESS
+          </Text>
+
+          <View className="mt-5 flex-row">
+            <View className="flex-1">
+              <Text className="text-3xl font-semibold text-[#39745F]">
+                {streaks.currentStreak}
+              </Text>
+              <Text className="mt-1 text-sm text-[#85877D]">
+                Current streak
+              </Text>
+              <Text className="mt-1 text-xs text-[#85877D]">
+                {streaks.currentStreak === 1 ? "day" : "days"}
+              </Text>
+            </View>
+
+            <View className="mx-3 w-px bg-[#DCD8CC]" />
+
+            <View className="flex-1">
+              <Text className="text-3xl font-semibold text-[#39745F]">
+                {streaks.bestStreak}
+              </Text>
+              <Text className="mt-1 text-sm text-[#85877D]">Best streak</Text>
+              <Text className="mt-1 text-xs text-[#85877D]">
+                {streaks.bestStreak === 1 ? "day" : "days"}
+              </Text>
+            </View>
+          </View>
+
+          <View className="mt-5 border-t border-[#DCD8CC] pt-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="text-sm font-medium text-[#26382F]">
+                Last 7 days
+              </Text>
+
+              <Text className="text-sm font-semibold text-[#39745F]">
+                {streaks.completedDaysThisWeek}/7 days
+              </Text>
+            </View>
+
+            <View className="mt-3 h-2 overflow-hidden rounded-full bg-[#EAE6DA]">
+              <View
+                className="h-full rounded-full bg-[#39745F]"
+                style={{
+                  width: `${(streaks.completedDaysThisWeek / 7) * 100}%`,
+                }}
+              />
+            </View>
+          </View>
+        </View>
+      )}
 
       <View className="mt-8 rounded-3xl bg-[#EAE6DA] p-6">
         <Text className="text-sm font-medium text-[#85877D]">CREATED ON</Text>

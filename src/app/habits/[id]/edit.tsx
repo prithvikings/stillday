@@ -1,20 +1,24 @@
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 import { colors } from "../../../constants/theme";
 import { useHabits } from "../../../hooks/useHabits";
 import type { Habit } from "../../../types/habit";
+
 
 export default function EditHabitScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,12 +30,59 @@ export default function EditHabitScreen() {
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+
+  const [reminderTime, setReminderTime] = useState(() => {
+    const time = new Date();
+    time.setHours(20, 0, 0, 0);
+    return time;
+  });
+
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
   useEffect(() => {
-    if (habit) {
-      setTitle(habit.title);
-      setDescription(habit.description);
+    if (!habit) return;
+
+    setTitle(habit.title);
+    setDescription(habit.description);
+    setReminderEnabled(habit.reminderEnabled ?? false);
+
+    const savedTime = new Date();
+    savedTime.setHours(
+      habit.reminderHour ?? 20,
+      habit.reminderMinute ?? 0,
+      0,
+      0,
+    );
+
+    setReminderTime(savedTime);
+  }, [
+    habit?.id,
+    habit?.title,
+    habit?.description,
+    habit?.reminderEnabled,
+    habit?.reminderHour,
+    habit?.reminderMinute,
+  ]);
+
+  function openTimePicker() {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: reminderTime,
+        mode: "time",
+        is24Hour: false,
+        onValueChange: (_event, selectedTime) => {
+          if (selectedTime) {
+            setReminderTime(selectedTime);
+          }
+        },
+      });
+
+      return;
     }
-  }, [habit?.id, habit?.title, habit?.description]);
+
+    setShowTimePicker(true);
+  }
 
   async function handleSave() {
     const trimmedTitle = title.trim();
@@ -57,6 +108,9 @@ export default function EditHabitScreen() {
       ...habit,
       title: trimmedTitle,
       description: trimmedDescription || "One small step at a time.",
+      reminderEnabled,
+      reminderHour: reminderTime.getHours(),
+      reminderMinute: reminderTime.getMinutes(),
     };
 
     try {
@@ -177,6 +231,91 @@ export default function EditHabitScreen() {
           <Text className="mt-2 text-right text-xs text-[#85877D]">
             {description.length}/120
           </Text>
+        </View>
+
+        {/* Habit reminder */}
+        <View className="mt-8 rounded-3xl border border-[#DCD8CC] bg-white p-5">
+          <View className="flex-row items-center justify-between">
+            <View className="mr-4 flex-1">
+              <Text className="text-base font-semibold text-[#26382F]">
+                Habit reminder
+              </Text>
+
+              <Text className="mt-1 text-sm leading-5 text-[#85877D]">
+                Get a gentle nudge to complete this habit.
+              </Text>
+            </View>
+
+            <Pressable
+              accessibilityRole="switch"
+              accessibilityLabel="Enable habit reminder"
+              accessibilityState={{ checked: reminderEnabled }}
+              onPress={() => setReminderEnabled((enabled) => !enabled)}
+              className={`h-8 w-14 justify-center rounded-full px-1 ${
+                reminderEnabled ? "bg-[#39745F]" : "bg-[#DCD8CC]"
+              }`}
+            >
+              <View
+                className={`h-6 w-6 rounded-full bg-white ${
+                  reminderEnabled ? "self-end" : "self-start"
+                }`}
+              />
+            </Pressable>
+          </View>
+
+          {reminderEnabled && (
+            <View className="mt-5 border-t border-[#DCD8CC] pt-4">
+              <Text className="text-sm font-medium text-[#85877D]">
+                REMIND ME AT
+              </Text>
+
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Choose reminder time"
+                onPress={openTimePicker}
+                className="mt-3 flex-row items-center justify-between rounded-2xl bg-[#F7F5EF] px-4 py-4"
+              >
+                <Text className="text-lg font-semibold text-[#26382F]">
+                  {reminderTime.toLocaleTimeString([], {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                </Text>
+
+                <Text className="text-sm font-semibold text-[#39745F]">
+                  Change time →
+                </Text>
+              </Pressable>
+
+              {/* iOS time picker */}
+              {showTimePicker && Platform.OS === "ios" && (
+                <View className="mt-3">
+                  <DateTimePicker
+                    value={reminderTime}
+                    mode="time"
+                    display="spinner"
+                    onValueChange={(_event, selectedTime) => {
+                      if (selectedTime) {
+                        setReminderTime(selectedTime);
+                      }
+                    }}
+                    onDismiss={() => setShowTimePicker(false)}
+                  />
+
+                  <Pressable
+                    onPress={() => setShowTimePicker(false)}
+                    className="mt-2 items-center rounded-xl bg-[#EAE6DA] py-3"
+                  >
+                    <Text className="font-semibold text-[#39745F]">Done</Text>
+                  </Pressable>
+                </View>
+              )}
+
+              <Text className="mt-3 text-xs leading-5 text-[#85877D]">
+                You can change or disable this reminder whenever you like.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Encouragement card */}

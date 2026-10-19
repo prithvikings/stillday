@@ -1,12 +1,13 @@
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
 } from "react-native";
 
+import { router } from "expo-router";
 import { useCompletions } from "../../hooks/useCompletions";
 import { useHabits } from "../../hooks/useHabits";
 
@@ -132,17 +133,37 @@ export default function CalendarScreen() {
 
       {/* Monthly overview */}
       <View className="mt-8 rounded-3xl bg-[#294D3C] p-6">
-        <Text className="text-sm font-medium text-[#D5E0D5]">THIS MONTH</Text>
+        {habits.length === 0 ? (
+          <>
+            <Text className="text-sm font-medium text-[#D5E0D5]">
+              YOUR JOURNEY STARTS HERE
+            </Text>
 
-        <Text className="mt-2 text-3xl font-semibold text-white">
-          {completedDays} {completedDays === 1 ? "day" : "days"}
-        </Text>
+            <Text className="mt-3 text-2xl font-semibold text-white">
+              Every day is a new beginning.
+            </Text>
 
-        <Text className="mt-1 text-sm text-[#D5E0D5]">
-          with at least one completed habit
-        </Text>
+            <Text className="mt-2 text-sm leading-6 text-[#D5E0D5]">
+              Create your first habit and your progress will begin to appear on
+              this calendar.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text className="text-sm font-medium text-[#D5E0D5]">
+              THIS MONTH
+            </Text>
+
+            <Text className="mt-2 text-3xl font-semibold text-white">
+              {completedDays} {completedDays === 1 ? "day" : "days"}
+            </Text>
+
+            <Text className="mt-1 text-sm text-[#D5E0D5]">
+              with at least one completed habit
+            </Text>
+          </>
+        )}
       </View>
-
       {/* Calendar card */}
       <View className="mt-6 rounded-3xl border border-[#DCD8CC] bg-white p-4">
         {/* Month navigation */}
@@ -273,12 +294,14 @@ export default function CalendarScreen() {
         <View className="mt-4 rounded-2xl border border-[#DCD8CC] bg-white p-5">
           <View className="flex-row items-end justify-between">
             <Text className="text-base font-semibold text-[#26382F]">
-              Daily progress
+              {habits.length === 0 ? "A fresh start" : "Daily progress"}
             </Text>
 
-            <Text className="text-sm font-medium text-[#39745F]">
-              {selectedCompletedCount}/{habits.length}
-            </Text>
+            {habits.length > 0 && (
+              <Text className="text-sm font-medium text-[#39745F]">
+                {selectedCompletedCount}/{habits.length}
+              </Text>
+            )}
           </View>
 
           <View className="mt-3 h-2 overflow-hidden rounded-full bg-[#EAE6DA]">
@@ -289,9 +312,22 @@ export default function CalendarScreen() {
           </View>
 
           {habits.length === 0 ? (
-            <Text className="mt-4 text-sm leading-5 text-[#85877D]">
-              Add a habit to start building your history.
-            </Text>
+            <View className="mt-4">
+              <Text className="text-sm leading-6 text-[#85877D]">
+                Your completed habits will appear here as you build your
+                routine.
+              </Text>
+
+              <Pressable
+                onPress={() => router.push("/habits/new")}
+                accessibilityRole="button"
+                className="mt-4 items-center rounded-full bg-[#39745F] px-5 py-3"
+              >
+                <Text className="font-semibold text-white">
+                  + Create your first habit
+                </Text>
+              </Pressable>
+            </View>
           ) : (
             <View className="mt-4">
               {habits.map((habit) => {
