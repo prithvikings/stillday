@@ -1,56 +1,133 @@
-# Welcome to your Expo app 👋
+<div align="center">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# Stillday 🌿
 
-## Get started
+### Build small habits. Find your rhythm.
 
-1. Install dependencies
+A calm, minimal habit tracker designed to help you build consistency one day at a time.
 
-   ```bash
-   npm install
-   ```
+</div>
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## ✨ About
 
-In the output, you'll find options to open the app in a
+**Stillday** is a personal habit-tracking mobile app built with React Native and Expo. It helps you keep track of daily habits, review your progress, and manage your data in a clean, distraction-free interface.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+The app uses a soft, earthy visual style and supports light, dark, and system appearance modes.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📱 Features
 
-## Get a fresh project
+- **Daily Habit Tracking** — View your habits and mark daily progress.
+- **Calendar View** — Explore habit completion across dates.
+- **Insights** — Review your habit progress and consistency.
+- **Habit Management** — Create, view, edit, and delete habits.
+- **Appearance Settings** — Choose light mode, dark mode, or follow your device's system setting.
+- **Reminder Preferences** — Configure reminder preferences and time in the interface. Notification scheduling is planned for a later development stage.
+- **Data Backup** — Export habit data and completion history as JSON.
+- **Data Restore** — Import a backup to restore your habits and completion history.
+- **Reset Data** — Clear habit and completion data when needed.
 
-When you're ready, run:
+## 🛠️ Built With
+
+- [React Native](https://reactnative.dev/)
+- [Expo](https://expo.dev/)
+- [Expo Router](https://docs.expo.dev/router/introduction/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [NativeWind](https://www.nativewind.dev/)
+- [AsyncStorage](https://react-native-async-storage.github.io/async-storage/)
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+Make sure you have the following installed:
+
+- [Bun](https://bun.sh/) or another compatible JavaScript package manager
+- [Node.js](https://nodejs.org/) if required by your local Expo tooling
+- [Expo development tools](https://docs.expo.dev/get-started/installation/)
+
+### Installation
+
+**1. Clone the repository**
 
 ```bash
-npm run reset-project
+git clone <your-repository-url>
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**2. Navigate to the project directory**
 
-### Other setup steps
+```bash
+cd sprout
+```
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+**3. Install dependencies**
 
-## Learn more
+```bash
+bun install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+**4. Start the Expo development server**
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+bunx expo start
+```
 
-## Join the community
+Follow the Expo CLI instructions to open the app in a supported simulator or development environment.
 
-Join our community of developers creating universal apps.
+> **Note:** Some native features may require a development build rather than Expo Go.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🗺️ Development Roadmap
+
+Stillday is actively being developed. Planned and ongoing work includes:
+
+- [x] Core habit tracking and habit management
+- [x] Calendar and progress insights
+- [x] Settings and appearance preferences
+- [x] JSON backup export and import
+- [x] Light and dark theme support across the app
+- [ ] Complete app-wide visual polish
+- [ ] Audit data persistence and date/time handling
+- [ ] Implement and test scheduled notifications
+- [ ] Final device testing and release preparation
+
+The roadmap may change as development continues.
+
+## 📂 Project Structure
+
+The main application code is organized under `src/`:
+
+```text
+src/
+├── app/          # Expo Router screens and tab navigation
+├── constants/    # Shared theme and app constants
+├── hooks/        # Theme, habits, and completion state
+├── services/     # Backup, import, and related services
+└── types/        # TypeScript types
+```
+
+The exact structure may evolve as the project grows.
+
+## 🧪 Project Status
+
+Stillday is a work in progress and is not yet presented as a final production release.
+
+Core tracking, calendar, insights, settings, and backup flows are implemented. Further polish, persistence checks, notification scheduling, and release testing remain.
+
+## 🤝 Contributing
+
+This is currently a personal learning and development project. Suggestions and feedback are welcome.
+
+If you want to contribute, please open an issue first to discuss the proposed change.
+
+## 📄 License
+
+No license has been added yet. Unless a license is included in this repository, all rights remain with the project owner, and reuse is not automatically permitted.
+
+---
+
+<div align="center">
+
+Made with care, one small habit at a time 🌱
+
+</div>
