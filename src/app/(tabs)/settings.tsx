@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { useEffect, useState } from "react";
@@ -375,12 +376,12 @@ export default function SettingsScreen() {
                   ? "Light"
                   : "Dark";
 
-            const icon =
+            const iconName =
               appearanceOption === "system"
-                ? "▣"
+                ? "phone-portrait-outline"
                 : appearanceOption === "light"
-                  ? "☀"
-                  : "☾";
+                  ? "sunny-outline"
+                  : "moon-outline";
 
             return (
               <Pressable
@@ -412,20 +413,19 @@ export default function SettingsScreen() {
                       : "#DCD8CC",
                 }}
               >
-                <Text
-                  className="text-lg"
-                  style={{
-                    color: selected
+                <Ionicons
+                  name={iconName as any}
+                  size={21}
+                  color={
+                    selected
                       ? isDark
                         ? "#171E1A"
                         : "#FFFFFF"
                       : isDark
                         ? colors.text
-                        : "#26382F",
-                  }}
-                >
-                  {icon}
-                </Text>
+                        : "#26382F"
+                  }
+                />
 
                 <Text
                   className="mt-2 text-sm font-semibold"
@@ -510,8 +510,21 @@ export default function SettingsScreen() {
                       : "#DCD8CC",
                 }}
               >
+                <Ionicons
+                  name="calendar-outline"
+                  size={19}
+                  color={
+                    selected
+                      ? isDark
+                        ? "#171E1A"
+                        : "#FFFFFF"
+                      : isDark
+                        ? colors.text
+                        : "#26382F"
+                  }
+                />
                 <Text
-                  className="font-semibold"
+                  className="mt-2 font-semibold"
                   style={{
                     color: selected
                       ? isDark
@@ -545,7 +558,17 @@ export default function SettingsScreen() {
           borderColor: isDark ? colors.border : "#DCD8CC",
         }}
       >
-        <View className="mr-4 flex-1">
+        <View
+          className="mr-3 h-10 w-10 items-center justify-center rounded-full"
+          style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
+        >
+          <Ionicons
+            name="notifications-outline"
+            size={20}
+            color={isDark ? colors.primary : "#39745F"}
+          />
+        </View>
+        <View className="mr-3 flex-1">
           <Text
             className="text-base font-semibold"
             style={{ color: isDark ? colors.text : "#26382F" }}
@@ -605,13 +628,25 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        <Text
-          className="ml-3 font-semibold"
-          style={{ color: isDark ? colors.primary : "#39745F" }}
-        >
-          {formatReminderTime(settings.reminderHour, settings.reminderMinute)}
-          {"  ›"}
-        </Text>
+        <View className="ml-3 flex-row items-center">
+          <Ionicons
+            name="time-outline"
+            size={18}
+            color={isDark ? colors.primary : "#39745F"}
+          />
+          <Text
+            className="ml-2 font-semibold"
+            style={{ color: isDark ? colors.primary : "#39745F" }}
+          >
+            {formatReminderTime(settings.reminderHour, settings.reminderMinute)}
+          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={17}
+            color={isDark ? colors.primary : "#39745F"}
+            style={{ marginLeft: 6 }}
+          />
+        </View>
       </Pressable>
 
       {showReminderTimePicker && (
@@ -694,12 +729,11 @@ export default function SettingsScreen() {
             className="mr-3 h-10 w-10 items-center justify-center rounded-full"
             style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
           >
-            <Text
-              className="text-xl"
-              style={{ color: isDark ? colors.primary : "#39745F" }}
-            >
-              ↑
-            </Text>
+            <Ionicons
+              name="cloud-download-outline"
+              size={21}
+              color={isDark ? colors.primary : "#39745F"}
+            />
           </View>
 
           <View className="flex-1">
@@ -718,12 +752,11 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          <Text
-            className="ml-2 text-xl"
-            style={{ color: isDark ? colors.primary : "#39745F" }}
-          >
-            ›
-          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isDark ? colors.primary : "#39745F"}
+          />
         </Pressable>
 
         <Pressable
@@ -740,12 +773,11 @@ export default function SettingsScreen() {
             className="mr-3 h-10 w-10 items-center justify-center rounded-full"
             style={{ backgroundColor: isDark ? colors.surface : "#EAE6DA" }}
           >
-            <Text
-              className="text-xl"
-              style={{ color: isDark ? colors.primary : "#39745F" }}
-            >
-              ↓
-            </Text>
+            <Ionicons
+              name="cloud-upload-outline"
+              size={21}
+              color={isDark ? colors.primary : "#39745F"}
+            />
           </View>
 
           <View className="flex-1">
@@ -764,12 +796,11 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          <Text
-            className="ml-2 text-xl"
-            style={{ color: isDark ? colors.primary : "#39745F" }}
-          >
-            ›
-          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isDark ? colors.primary : "#39745F"}
+          />
         </Pressable>
 
         <Pressable
@@ -788,12 +819,11 @@ export default function SettingsScreen() {
               backgroundColor: isDark ? `${colors.danger}1A` : "#A4473D1A",
             }}
           >
-            <Text
-              className="text-xl"
-              style={{ color: isDark ? colors.danger : "#A4473D" }}
-            >
-              ↺
-            </Text>
+            <Ionicons
+              name="trash-outline"
+              size={21}
+              color={isDark ? colors.danger : "#A4473D"}
+            />
           </View>
 
           <View className="flex-1">
@@ -812,12 +842,11 @@ export default function SettingsScreen() {
             </Text>
           </View>
 
-          <Text
-            className="ml-2 text-xl"
-            style={{ color: isDark ? colors.danger : "#A4473D" }}
-          >
-            ›
-          </Text>
+          <Ionicons
+            name="chevron-forward"
+            size={18}
+            color={isDark ? colors.danger : "#A4473D"}
+          />
         </Pressable>
       </View>
 

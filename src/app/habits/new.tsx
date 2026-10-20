@@ -1,3 +1,4 @@
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -71,12 +72,22 @@ export default function NewHabitScreen() {
         }}
         style={{ backgroundColor: colors.background }}
       >
-        <Pressable onPress={() => router.back()} className="self-start py-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="self-start flex-row items-center gap-2 py-2"
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons
+            name="arrow-back"
+            size={18}
+            color={isDark ? colors.primary : "#39745F"}
+          />
           <Text
             className="text-base font-medium"
             style={{ color: isDark ? colors.primary : "#39745F" }}
           >
-            ← Back
+            Back
           </Text>
         </Pressable>
 
@@ -87,12 +98,26 @@ export default function NewHabitScreen() {
           BUILD A ROUTINE
         </Text>
 
-        <Text
-          className="mt-3 text-3xl font-semibold"
-          style={{ color: colors.text }}
-        >
-          A little starts here.
-        </Text>
+        <View className="mt-3 flex-row items-center gap-3">
+          <View
+            className="h-11 w-11 items-center justify-center rounded-2xl"
+            style={{
+              backgroundColor: isDark ? colors.surface : "#EAE6DA",
+            }}
+          >
+            <Ionicons
+              name="leaf-outline"
+              size={23}
+              color={isDark ? colors.primary : "#39745F"}
+            />
+          </View>
+          <Text
+            className="flex-1 text-3xl font-semibold"
+            style={{ color: colors.text }}
+          >
+            A little starts here.
+          </Text>
+        </View>
 
         <Text
           className="mt-3 text-base leading-6"
@@ -179,12 +204,19 @@ export default function NewHabitScreen() {
             borderColor: colors.border,
           }}
         >
-          <Text
-            className="text-sm font-semibold"
-            style={{ color: isDark ? colors.primaryDark : "#294D3C" }}
-          >
-            Keep it achievable
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Ionicons
+              name="sparkles-outline"
+              size={18}
+              color={isDark ? colors.primary : "#294D3C"}
+            />
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: isDark ? colors.primaryDark : "#294D3C" }}
+            >
+              Keep it achievable
+            </Text>
+          </View>
           <Text
             className="mt-2 text-sm leading-5"
             style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
@@ -197,11 +229,18 @@ export default function NewHabitScreen() {
         <Pressable
           onPress={handleSave}
           disabled={saving}
-          className={`mt-8 items-center rounded-2xl py-4 ${
+          className={`mt-8 flex-row items-center justify-center gap-2 rounded-2xl py-4 ${
             saving ? "opacity-60" : ""
           }`}
           style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
+          accessibilityRole="button"
+          accessibilityLabel="Create habit"
         >
+          <Ionicons
+            name="add-circle-outline"
+            size={20}
+            color={isDark ? "#171E1A" : "#FFFFFF"}
+          />
           <Text
             className="text-base font-semibold"
             style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}

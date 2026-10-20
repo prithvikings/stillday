@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router } from "expo-router";
 import { useAppTheme } from "../../hooks/ThemeProvider";
 import { useCompletions } from "../../hooks/useCompletions";
@@ -155,9 +156,17 @@ export default function CalendarScreen() {
       <View className="mt-8 rounded-3xl bg-[#294D3C] p-6">
         {habits.length === 0 ? (
           <>
-            <Text className="text-sm font-medium text-[#D5E0D5]">
-              YOUR JOURNEY STARTS HERE
-            </Text>
+            <View className="flex-row items-center">
+              <Ionicons
+                name="leaf-outline"
+                size={16}
+                color="#D5E0D5"
+                style={{ marginRight: 8 }}
+              />
+              <Text className="text-sm font-medium text-[#D5E0D5]">
+                YOUR JOURNEY STARTS HERE
+              </Text>
+            </View>
 
             <Text className="mt-3 text-2xl font-semibold text-white">
               Every day is a new beginning.
@@ -170,9 +179,17 @@ export default function CalendarScreen() {
           </>
         ) : (
           <>
-            <Text className="text-sm font-medium text-[#D5E0D5]">
-              THIS MONTH
-            </Text>
+            <View className="flex-row items-center">
+              <Ionicons
+                name="calendar-outline"
+                size={16}
+                color="#D5E0D5"
+                style={{ marginRight: 8 }}
+              />
+              <Text className="text-sm font-medium text-[#D5E0D5]">
+                THIS MONTH
+              </Text>
+            </View>
 
             <Text className="mt-2 text-3xl font-semibold text-white">
               {completedDays} {completedDays === 1 ? "day" : "days"}
@@ -202,7 +219,7 @@ export default function CalendarScreen() {
               backgroundColor: isDark ? colors.muted : "#F7F5EF",
             }}
           >
-            <Text className="text-xl text-[#39745F]">‹</Text>
+            <Ionicons name="chevron-back" size={20} color="#39745F" />
           </Pressable>
 
           <Text
@@ -220,12 +237,11 @@ export default function CalendarScreen() {
               backgroundColor: isDark ? colors.muted : "#F7F5EF",
             }}
           >
-            <Text
-              className="text-xl"
-              style={{ color: isDark ? colors.primary : "#39745F" }}
-            >
-              ›
-            </Text>
+            <Ionicons
+              name="chevron-forward"
+              size={20}
+              color={isDark ? colors.primary : "#39745F"}
+            />
           </Pressable>
         </View>
 
@@ -353,12 +369,20 @@ export default function CalendarScreen() {
 
       {/* Selected date summary */}
       <View className="mt-7">
-        <Text
-          className="text-sm font-medium uppercase tracking-widest"
-          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-        >
-          YOUR DAY
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="calendar-clear-outline"
+            size={15}
+            color={isDark ? colors.textSecondary : "#85877D"}
+            style={{ marginRight: 7 }}
+          />
+          <Text
+            className="text-sm font-medium uppercase tracking-widest"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
+            YOUR DAY
+          </Text>
+        </View>
 
         <Text
           className="mt-2 text-xl font-semibold"
@@ -375,12 +399,24 @@ export default function CalendarScreen() {
           }}
         >
           <View className="flex-row items-end justify-between">
-            <Text
-              className="text-base font-semibold"
-              style={{ color: isDark ? colors.text : "#26382F" }}
-            >
-              {habits.length === 0 ? "A fresh start" : "Daily progress"}
-            </Text>
+            <View className="flex-row items-center">
+              <Ionicons
+                name={
+                  habits.length === 0
+                    ? "leaf-outline"
+                    : "checkmark-circle-outline"
+                }
+                size={18}
+                color={isDark ? colors.primary : "#39745F"}
+                style={{ marginRight: 7 }}
+              />
+              <Text
+                className="text-base font-semibold"
+                style={{ color: isDark ? colors.text : "#26382F" }}
+              >
+                {habits.length === 0 ? "A fresh start" : "Daily progress"}
+              </Text>
+            </View>
 
             {habits.length > 0 && (
               <Text
@@ -420,9 +456,17 @@ export default function CalendarScreen() {
                 accessibilityRole="button"
                 className="mt-4 items-center rounded-full bg-[#39745F] px-5 py-3"
               >
-                <Text className="font-semibold text-white">
-                  + Create your first habit
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="add"
+                    size={19}
+                    color="#FFFFFF"
+                    style={{ marginRight: 5 }}
+                  />
+                  <Text className="font-semibold text-white">
+                    Create your first habit
+                  </Text>
+                </View>
               </Pressable>
             </View>
           ) : (

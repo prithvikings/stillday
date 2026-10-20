@@ -1,3 +1,4 @@
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -75,7 +76,15 @@ export default function HabitDetailScreen() {
         className="flex-1 items-center justify-center px-6"
         style={{ backgroundColor: colors.background }}
       >
-        <Text className="text-xl font-semibold" style={{ color: colors.text }}>
+        <Ionicons
+          name="leaf-outline"
+          size={36}
+          color={isDark ? colors.textSecondary : "#85877D"}
+        />
+        <Text
+          className="mt-3 text-xl font-semibold"
+          style={{ color: colors.text }}
+        >
           Habit not found
         </Text>
 
@@ -88,9 +97,15 @@ export default function HabitDetailScreen() {
 
         <Pressable
           onPress={() => router.replace("/(tabs)")}
-          className="mt-6 rounded-full px-6 py-3"
+          className="mt-6 flex-row items-center rounded-full px-6 py-3"
           style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
         >
+          <Ionicons
+            name="arrow-back-outline"
+            size={17}
+            color={isDark ? "#171E1A" : "#FFFFFF"}
+            style={{ marginRight: 7 }}
+          />
           <Text
             className="font-semibold"
             style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
@@ -118,21 +133,40 @@ export default function HabitDetailScreen() {
         paddingBottom: 40,
       }}
     >
-      <Pressable onPress={() => router.back()} className="self-start py-2">
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        className="self-start flex-row items-center py-2"
+      >
+        <Ionicons
+          name="arrow-back-outline"
+          size={18}
+          color={isDark ? colors.primary : "#39745F"}
+          style={{ marginRight: 6 }}
+        />
         <Text
           className="text-base font-medium"
           style={{ color: isDark ? colors.primary : "#39745F" }}
         >
-          ← Back
+          Back
         </Text>
       </Pressable>
 
-      <Text
-        className="mt-10 text-sm font-medium uppercase tracking-widest"
-        style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-      >
-        YOUR HABIT
-      </Text>
+      <View className="mt-10 flex-row items-center">
+        <Ionicons
+          name="leaf-outline"
+          size={17}
+          color={isDark ? colors.textSecondary : "#85877D"}
+          style={{ marginRight: 8 }}
+        />
+        <Text
+          className="text-sm font-medium uppercase tracking-widest"
+          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+        >
+          YOUR HABIT
+        </Text>
+      </View>
 
       <Text
         className="mt-3 text-3xl font-semibold leading-10"
@@ -156,26 +190,42 @@ export default function HabitDetailScreen() {
             borderColor: colors.border,
           }}
         >
-          <Text
-            className="text-sm font-medium uppercase tracking-widest"
-            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-          >
-            YOUR PROGRESS
-          </Text>
+          <View className="flex-row items-center">
+            <Ionicons
+              name="trending-up-outline"
+              size={17}
+              color={isDark ? colors.textSecondary : "#85877D"}
+              style={{ marginRight: 7 }}
+            />
+            <Text
+              className="text-sm font-medium uppercase tracking-widest"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
+              YOUR PROGRESS
+            </Text>
+          </View>
 
           <View className="mt-5 flex-row">
             <View className="flex-1">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="flame-outline"
+                  size={15}
+                  color={isDark ? colors.primary : "#39745F"}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+                >
+                  Current streak
+                </Text>
+              </View>
               <Text
-                className="text-3xl font-semibold"
+                className="mt-2 text-3xl font-semibold"
                 style={{ color: isDark ? colors.primary : "#39745F" }}
               >
                 {streaks.currentStreak}
-              </Text>
-              <Text
-                className="mt-1 text-sm"
-                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-              >
-                Current streak
               </Text>
               <Text
                 className="mt-1 text-xs"
@@ -191,17 +241,25 @@ export default function HabitDetailScreen() {
             />
 
             <View className="flex-1">
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="trophy-outline"
+                  size={15}
+                  color={isDark ? colors.primary : "#39745F"}
+                  style={{ marginRight: 5 }}
+                />
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+                >
+                  Best streak
+                </Text>
+              </View>
               <Text
-                className="text-3xl font-semibold"
+                className="mt-2 text-3xl font-semibold"
                 style={{ color: isDark ? colors.primary : "#39745F" }}
               >
                 {streaks.bestStreak}
-              </Text>
-              <Text
-                className="mt-1 text-sm"
-                style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-              >
-                Best streak
               </Text>
               <Text
                 className="mt-1 text-xs"
@@ -217,12 +275,20 @@ export default function HabitDetailScreen() {
             style={{ borderColor: colors.border }}
           >
             <View className="flex-row items-center justify-between">
-              <Text
-                className="text-sm font-medium"
-                style={{ color: colors.text }}
-              >
-                Last 7 days
-              </Text>
+              <View className="flex-row items-center">
+                <Ionicons
+                  name="calendar-outline"
+                  size={16}
+                  color={isDark ? colors.textSecondary : "#85877D"}
+                  style={{ marginRight: 7 }}
+                />
+                <Text
+                  className="text-sm font-medium"
+                  style={{ color: colors.text }}
+                >
+                  Last 7 days
+                </Text>
+              </View>
 
               <Text
                 className="text-sm font-semibold"
@@ -256,12 +322,20 @@ export default function HabitDetailScreen() {
           borderColor: colors.border,
         }}
       >
-        <Text
-          className="text-sm font-medium"
-          style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-        >
-          CREATED ON
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="calendar-clear-outline"
+            size={16}
+            color={isDark ? colors.textSecondary : "#85877D"}
+            style={{ marginRight: 7 }}
+          />
+          <Text
+            className="text-sm font-medium"
+            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+          >
+            CREATED ON
+          </Text>
+        </View>
 
         <Text
           className="mt-2 text-lg font-semibold"
@@ -291,9 +365,16 @@ export default function HabitDetailScreen() {
             params: { id: habit.id },
           })
         }
-        className="mt-8 items-center rounded-2xl py-4"
+        accessibilityRole="button"
+        className="mt-8 flex-row items-center justify-center rounded-2xl py-4"
         style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
       >
+        <Ionicons
+          name="create-outline"
+          size={18}
+          color={isDark ? "#171E1A" : "#FFFFFF"}
+          style={{ marginRight: 8 }}
+        />
         <Text
           className="text-base font-semibold"
           style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
@@ -305,12 +386,28 @@ export default function HabitDetailScreen() {
       <Pressable
         onPress={handleDelete}
         disabled={deleting}
-        className="mt-4 items-center rounded-2xl border py-4"
+        accessibilityRole="button"
+        className="mt-4 flex-row items-center justify-center rounded-2xl border py-4"
         style={{
           borderColor: isDark ? `${colors.danger}99` : "#DCD8CC",
           backgroundColor: isDark ? `${colors.danger}0D` : "transparent",
+          opacity: deleting ? 0.7 : 1,
         }}
       >
+        {deleting ? (
+          <ActivityIndicator
+            size="small"
+            color={isDark ? colors.danger : "#A4473D"}
+            style={{ marginRight: 8 }}
+          />
+        ) : (
+          <Ionicons
+            name="trash-outline"
+            size={18}
+            color={isDark ? colors.danger : "#A4473D"}
+            style={{ marginRight: 8 }}
+          />
+        )}
         <Text
           className="text-base font-semibold"
           style={{ color: isDark ? colors.danger : "#A4473D" }}

@@ -1,3 +1,4 @@
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import {
@@ -203,16 +204,22 @@ export default function InsightsScreen() {
           <Pressable
             onPress={() => router.push("/habits/new")}
             accessibilityRole="button"
-            className="mt-6 w-full items-center rounded-full px-5 py-4"
+            className="mt-6 w-full flex-row items-center justify-center rounded-full px-5 py-4"
             style={{
               backgroundColor: isDark ? colors.primary : "#39745F",
             }}
           >
+            <Ionicons
+              name="add"
+              size={19}
+              color={isDark ? "#171E1A" : "#FFFFFF"}
+              style={{ marginRight: 5 }}
+            />
             <Text
               className="font-semibold"
               style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
             >
-              + Create your first habit
+              Create your first habit
             </Text>
           </Pressable>
         </View>
@@ -225,12 +232,20 @@ export default function InsightsScreen() {
           backgroundColor: isDark ? colors.surface : "#294D3C",
         }}
       >
-        <Text
-          className="text-sm font-medium"
-          style={{ color: isDark ? colors.textSecondary : "#D5E0D5" }}
-        >
-          WEEKLY COMPLETION RATE
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="stats-chart-outline"
+            size={17}
+            color={isDark ? colors.textSecondary : "#D5E0D5"}
+            style={{ marginRight: 8 }}
+          />
+          <Text
+            className="text-sm font-medium"
+            style={{ color: isDark ? colors.textSecondary : "#D5E0D5" }}
+          >
+            WEEKLY COMPLETION RATE
+          </Text>
+        </View>
 
         <Text
           className="mt-3 text-5xl font-semibold"
@@ -274,12 +289,20 @@ export default function InsightsScreen() {
             borderColor: isDark ? colors.border : "#DCD8CC",
           }}
         >
-          <Text
-            className="text-sm"
-            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-          >
-            Active habits
-          </Text>
+          <View className="flex-row items-center">
+            <Ionicons
+              name="leaf-outline"
+              size={15}
+              color={isDark ? colors.textSecondary : "#85877D"}
+              style={{ marginRight: 5 }}
+            />
+            <Text
+              className="text-sm"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
+              Active habits
+            </Text>
+          </View>
 
           <Text
             className="mt-2 text-3xl font-semibold"
@@ -303,12 +326,20 @@ export default function InsightsScreen() {
             borderColor: isDark ? colors.border : "#DCD8CC",
           }}
         >
-          <Text
-            className="text-sm"
-            style={{ color: isDark ? colors.textSecondary : "#85877D" }}
-          >
-            Completions
-          </Text>
+          <View className="flex-row items-center">
+            <Ionicons
+              name="checkmark-done-outline"
+              size={15}
+              color={isDark ? colors.textSecondary : "#85877D"}
+              style={{ marginRight: 5 }}
+            />
+            <Text
+              className="text-sm"
+              style={{ color: isDark ? colors.textSecondary : "#85877D" }}
+            >
+              Completions
+            </Text>
+          </View>
 
           <Text
             className="mt-2 text-3xl font-semibold"
@@ -334,12 +365,20 @@ export default function InsightsScreen() {
           borderColor: isDark ? colors.border : "#DCD8CC",
         }}
       >
-        <Text
-          className="text-lg font-semibold"
-          style={{ color: isDark ? colors.text : "#26382F" }}
-        >
-          Your weekly rhythm
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="bar-chart-outline"
+            size={18}
+            color={isDark ? colors.text : "#26382F"}
+            style={{ marginRight: 8 }}
+          />
+          <Text
+            className="text-lg font-semibold"
+            style={{ color: isDark ? colors.text : "#26382F" }}
+          >
+            Your weekly rhythm
+          </Text>
+        </View>
 
         <Text
           className="mt-1 text-sm"
@@ -399,12 +438,20 @@ export default function InsightsScreen() {
           backgroundColor: isDark ? colors.surface : "#EAE6DA",
         }}
       >
-        <Text
-          className="text-sm font-medium uppercase tracking-widest"
-          style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
-        >
-          A LITTLE RECOGNITION
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="ribbon-outline"
+            size={17}
+            color={isDark ? colors.textSecondary : "#6F766B"}
+            style={{ marginRight: 7 }}
+          />
+          <Text
+            className="text-sm font-medium uppercase tracking-widest"
+            style={{ color: isDark ? colors.textSecondary : "#6F766B" }}
+          >
+            A LITTLE RECOGNITION
+          </Text>
+        </View>
 
         {analytics.bestHabit ? (
           <>

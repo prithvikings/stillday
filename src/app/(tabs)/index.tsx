@@ -1,3 +1,4 @@
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router } from "expo-router";
 import {
   ActivityIndicator,
@@ -80,12 +81,20 @@ export default function TodayScreen() {
           backgroundColor: isDark ? colors.surface : colors.primaryDark,
         }}
       >
-        <Text
-          className="text-sm font-medium"
-          style={{ color: isDark ? colors.textSecondary : "#D5E0D5" }}
-        >
-          YOUR DAILY PROGRESS
-        </Text>
+        <View className="flex-row items-center">
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={18}
+            color={isDark ? colors.textSecondary : "#D5E0D5"}
+            style={{ marginRight: 8 }}
+          />
+          <Text
+            className="text-sm font-medium"
+            style={{ color: isDark ? colors.textSecondary : "#D5E0D5" }}
+          >
+            YOUR DAILY PROGRESS
+          </Text>
+        </View>
 
         <View className="mt-4 flex-row items-end justify-between">
           <Text
@@ -149,11 +158,17 @@ export default function TodayScreen() {
         <Pressable
           onPress={() => router.push("/habits/new")}
           accessibilityRole="button"
-          className="rounded-full px-4 py-3"
+          className="flex-row items-center rounded-full px-4 py-3"
           style={{ backgroundColor: colors.surface }}
         >
+          <Ionicons
+            name="add"
+            size={19}
+            color={colors.primary}
+            style={{ marginRight: 5 }}
+          />
           <Text className="font-semibold" style={{ color: colors.primary }}>
-            + Add habit
+            Add habit
           </Text>
         </Pressable>
       </View>
@@ -198,22 +213,36 @@ export default function TodayScreen() {
               </Text>
 
               <View className="mt-2 flex-row items-center">
+                <Ionicons
+                  name="flame-outline"
+                  size={14}
+                  color={colors.primary}
+                  style={{ marginRight: 4 }}
+                />
                 <Text
                   className="text-xs font-medium"
                   style={{ color: colors.primary }}
                 >
                   {streak.currentStreak > 0
-                    ? `🔥 ${streak.currentStreak}-day streak`
+                    ? `${streak.currentStreak}-day streak`
                     : "Start your streak today"}
                 </Text>
               </View>
 
-              <Text
-                className="mt-2 text-xs font-medium"
-                style={{ color: colors.primary }}
-              >
-                View details →
-              </Text>
+              <View className="mt-2 flex-row items-center">
+                <Text
+                  className="text-xs font-medium"
+                  style={{ color: colors.primary }}
+                >
+                  View details
+                </Text>
+                <Ionicons
+                  name="eye-outline"
+                  size={14}
+                  color={colors.primary}
+                  style={{ marginLeft: 4 }}
+                />
+              </View>
             </Pressable>
 
             {/* Completion stays separate from navigation */}
@@ -270,11 +299,17 @@ export default function TodayScreen() {
           <Pressable
             onPress={() => router.push("/habits/new")}
             accessibilityRole="button"
-            className="mt-6 w-full items-center rounded-full px-5 py-4"
+            className="mt-6 w-full flex-row items-center justify-center rounded-full px-5 py-4"
             style={{ backgroundColor: colors.primary }}
           >
+            <Ionicons
+              name="add"
+              size={19}
+              color="#FFFFFF"
+              style={{ marginRight: 5 }}
+            />
             <Text className="font-semibold text-white">
-              + Create your first habit
+              Create your first habit
             </Text>
           </Pressable>
 

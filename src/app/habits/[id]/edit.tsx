@@ -1,6 +1,7 @@
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
+import { Ionicons } from "@react-native-vector-icons/ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -190,12 +191,22 @@ export default function EditHabitScreen() {
         }}
       >
         {/* Back button */}
-        <Pressable onPress={() => router.back()} className="self-start py-2">
+        <Pressable
+          onPress={() => router.back()}
+          className="self-start flex-row items-center gap-2 py-2"
+          accessibilityRole="button"
+          accessibilityLabel="Cancel and go back"
+        >
+          <Ionicons
+            name="arrow-back"
+            size={18}
+            color={isDark ? colors.primary : "#39745F"}
+          />
           <Text
             className="text-base font-medium"
             style={{ color: isDark ? colors.primary : "#39745F" }}
           >
-            ← Cancel
+            Cancel
           </Text>
         </Pressable>
 
@@ -207,12 +218,26 @@ export default function EditHabitScreen() {
           REFINE YOUR ROUTINE
         </Text>
 
-        <Text
-          className="mt-3 text-3xl font-semibold"
-          style={{ color: colors.text }}
-        >
-          Make it your own.
-        </Text>
+        <View className="mt-3 flex-row items-center gap-3">
+          <View
+            className="h-11 w-11 items-center justify-center rounded-2xl"
+            style={{
+              backgroundColor: isDark ? colors.surface : "#EAE6DA",
+            }}
+          >
+            <Ionicons
+              name="leaf-outline"
+              size={23}
+              color={isDark ? colors.primary : "#39745F"}
+            />
+          </View>
+          <Text
+            className="flex-1 text-3xl font-semibold"
+            style={{ color: colors.text }}
+          >
+            Make it your own.
+          </Text>
+        </View>
 
         <Text
           className="mt-3 text-base leading-6"
@@ -305,12 +330,19 @@ export default function EditHabitScreen() {
         >
           <View className="flex-row items-center justify-between">
             <View className="mr-4 flex-1">
-              <Text
-                className="text-base font-semibold"
-                style={{ color: colors.text }}
-              >
-                Habit reminder
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name="notifications-outline"
+                  size={19}
+                  color={isDark ? colors.primary : "#39745F"}
+                />
+                <Text
+                  className="text-base font-semibold"
+                  style={{ color: colors.text }}
+                >
+                  Habit reminder
+                </Text>
+              </View>
 
               <Text
                 className="mt-1 text-sm leading-5"
@@ -373,12 +405,19 @@ export default function EditHabitScreen() {
                   })}
                 </Text>
 
-                <Text
-                  className="text-sm font-semibold"
-                  style={{ color: isDark ? colors.primary : "#39745F" }}
-                >
-                  Change time →
-                </Text>
+                <View className="flex-row items-center gap-1">
+                  <Text
+                    className="text-sm font-semibold"
+                    style={{ color: isDark ? colors.primary : "#39745F" }}
+                  >
+                    Change time
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={isDark ? colors.primary : "#39745F"}
+                  />
+                </View>
               </Pressable>
 
               {/* iOS time picker */}
@@ -433,12 +472,19 @@ export default function EditHabitScreen() {
             borderColor: colors.border,
           }}
         >
-          <Text
-            className="text-sm font-semibold"
-            style={{ color: isDark ? colors.primaryDark : "#294D3C" }}
-          >
-            Progress, not perfection.
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Ionicons
+              name="sparkles-outline"
+              size={18}
+              color={isDark ? colors.primaryDark : "#294D3C"}
+            />
+            <Text
+              className="text-sm font-semibold"
+              style={{ color: isDark ? colors.primaryDark : "#294D3C" }}
+            >
+              Progress, not perfection.
+            </Text>
+          </View>
 
           <Text
             className="mt-2 text-sm leading-5"
@@ -454,11 +500,16 @@ export default function EditHabitScreen() {
           onPress={handleSave}
           disabled={saving}
           accessibilityRole="button"
-          className={`mt-8 items-center rounded-2xl py-4 ${
+          className={`mt-8 flex-row items-center justify-center gap-2 rounded-2xl py-4 ${
             saving ? "opacity-60" : ""
           }`}
           style={{ backgroundColor: isDark ? colors.primary : "#39745F" }}
         >
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={20}
+            color={isDark ? "#171E1A" : "#FFFFFF"}
+          />
           <Text
             className="text-base font-semibold"
             style={{ color: isDark ? "#171E1A" : "#FFFFFF" }}
@@ -471,8 +522,13 @@ export default function EditHabitScreen() {
         <Pressable
           onPress={() => router.back()}
           disabled={saving}
-          className="mt-3 items-center rounded-2xl py-4"
+          className="mt-3 flex-row items-center justify-center gap-2 rounded-2xl py-4"
         >
+          <Ionicons
+            name="close-circle-outline"
+            size={19}
+            color={isDark ? colors.textSecondary : "#85877D"}
+          />
           <Text
             className="text-base font-semibold"
             style={{ color: isDark ? colors.textSecondary : "#85877D" }}
