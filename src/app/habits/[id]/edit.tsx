@@ -187,7 +187,7 @@ export default function EditHabitScreen() {
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingTop: 48,
-          paddingBottom: 40,
+          paddingBottom: 50,
         }}
       >
         {/* Back button */}

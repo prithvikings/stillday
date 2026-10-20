@@ -142,7 +142,7 @@ export default function InsightsScreen() {
       contentContainerStyle={{
         paddingHorizontal: 24,
         paddingTop: 64,
-        paddingBottom: 40,
+        paddingBottom: 130,
       }}
       showsVerticalScrollIndicator={false}
     >
