@@ -26,7 +26,6 @@ const CompletionsContext = createContext<CompletionsContextValue | null>(null);
 
 function getTodayKey() {
   const now = new Date();
-
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
@@ -38,14 +37,10 @@ export function CompletionsProvider({ children }: { children: ReactNode }) {
   const [completions, setCompletions] = useState<CompletionsMap>({});
   const [loading, setLoading] = useState(true);
 
-  // Keep the latest completion data available to rapid successive updates.
   const completionsRef = useRef<CompletionsMap>({});
-
-  // Keep storage writes in order.
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
-
-  // Prevent toggles while the initial data is still loading.
   const loadingRef = useRef(true);
+  const loadErrorRef = useRef<Error | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -54,139 +49,129 @@ export function CompletionsProvider({ children }: { children: ReactNode }) {
       try {
         const stored = await getCompletions();
 
-        if (active) {
-          completionsRef.current = stored;
-          setCompletions(stored);
-        }
+        if (!active) return;
+
+        completionsRef.current = stored;
+        setCompletions(stored);
+        loadErrorRef.current = null;
       } catch (error) {
-        console.error("Failed to load completions:", error);
+        const normalizedError =
+          error instanceof Error
+            ? error
+            : new Error("Failed to load saved completion data.");
+
+        loadErrorRef.current = normalizedError;
+        console.error("Failed to load completions:", normalizedError);
       } finally {
         if (active) {
+          // The UI can finish its loading state, but mutation guards below
+          // still block changes if the saved data could not be read.
           loadingRef.current = false;
-
-          if (active) {
-            setLoading(false);
-          }
+          setLoading(false);
         }
       }
     }
 
-    loadCompletions();
+    void loadCompletions();
 
     return () => {
       active = false;
     };
   }, []);
 
-  const toggleCompletion = useCallback(async (habitId: string) => {
-    if (loadingRef.current) {
-      return;
-    }
-
-    const today = getTodayKey();
-    const current = completionsRef.current;
-    const currentToday = current[today] ?? [];
-
-    const isCompleted = currentToday.includes(habitId);
-
-    const updatedToday = isCompleted
-      ? currentToday.filter((id) => id !== habitId)
-      : [...currentToday, habitId];
-
-    const next: CompletionsMap = {
-      ...current,
-      [today]: updatedToday,
-    };
-
-    // Update the latest snapshot immediately.
-    completionsRef.current = next;
-    setCompletions(next);
-
-    // Queue saves so older writes cannot finish after newer writes.
-    const saveOperation = saveQueueRef.current.then(async () => {
-      await saveCompletions(next);
-    });
-
-    // Keep the queue usable even if a save fails.
-    saveQueueRef.current = saveOperation.catch((error) => {
-      console.error("Failed to save completion:", error);
-    });
-
-    await saveOperation;
-  }, []);
-
-  const removeHabitCompletions = useCallback(async (habitId: string) => {
+  const assertReady = useCallback(() => {
     if (loadingRef.current) {
       throw new Error("Completion data is still loading.");
     }
 
-    const current = completionsRef.current;
-    const next: CompletionsMap = {};
-
-    for (const [date, habitIds] of Object.entries(current)) {
-      const remaining = habitIds.filter((id) => id !== habitId);
-
-      // Keep dates that still contain at least one completion.
-      if (remaining.length > 0) {
-        next[date] = remaining;
-      }
+    if (loadErrorRef.current) {
+      throw new Error(
+        "Saved completion data could not be loaded. Restart the app and try again before making changes.",
+      );
     }
-
-    // Update the shared state immediately.
-    completionsRef.current = next;
-    setCompletions(next);
-
-    // Queue the save behind any pending completion writes.
-    const saveOperation = saveQueueRef.current.then(async () => {
-      await saveCompletions(next);
-    });
-
-    saveQueueRef.current = saveOperation.catch((error) => {
-      console.error("Failed to save completion cleanup:", error);
-    });
-
-    await saveOperation;
   }, []);
 
-  const replaceCompletions = useCallback(async (next: CompletionsMap) => {
-    if (loadingRef.current) {
-      throw new Error("Completion data is still loading.");
-    }
+  // Serialize each complete read-modify-save operation, not just the storage
+  // write. This prevents rapid taps from building updates from stale snapshots.
+  const enqueueMutation = useCallback(
+    (mutate: (current: CompletionsMap) => CompletionsMap) => {
+      const operation = saveQueueRef.current.then(async () => {
+        assertReady();
 
-    const saveOperation = saveQueueRef.current.then(async () => {
-      await saveCompletions(next);
-    });
+        const current = completionsRef.current;
+        const next = mutate(current);
 
-    saveQueueRef.current = saveOperation.catch((error) => {
-      console.error("Failed to replace completions:", error);
-    });
+        await saveCompletions(next);
 
-    await saveOperation;
+        completionsRef.current = next;
+        setCompletions(next);
+      });
 
-    completionsRef.current = next;
-    setCompletions(next);
-  }, []);
+      // Keep the queue usable after a rejected operation while still returning
+      // the original rejection to the caller.
+      saveQueueRef.current = operation.catch((error) => {
+        console.error("Failed to save completion data:", error);
+      });
+
+      return operation;
+    },
+    [assertReady],
+  );
+
+  const toggleCompletion = useCallback(
+    async (habitId: string) => {
+      await enqueueMutation((current) => {
+        const today = getTodayKey();
+        const currentToday = current[today] ?? [];
+        const isCompleted = currentToday.includes(habitId);
+
+        const updatedToday = isCompleted
+          ? currentToday.filter((id) => id !== habitId)
+          : [...currentToday, habitId];
+
+        return {
+          ...current,
+          [today]: updatedToday,
+        };
+      });
+    },
+    [enqueueMutation],
+  );
+
+  const removeHabitCompletions = useCallback(
+    async (habitId: string) => {
+      await enqueueMutation((current) => {
+        const next: CompletionsMap = {};
+
+        for (const [date, habitIds] of Object.entries(current)) {
+          const remaining = habitIds.filter((id) => id !== habitId);
+
+          // Preserve the prior behavior of omitting dates with no completions.
+          if (remaining.length > 0) {
+            next[date] = remaining;
+          }
+        }
+
+        return next;
+      });
+    },
+    [enqueueMutation],
+  );
+
+  const replaceCompletions = useCallback(
+    async (next: CompletionsMap) => {
+      const replacement: CompletionsMap = Object.fromEntries(
+        Object.entries(next).map(([date, ids]) => [date, [...ids]]),
+      );
+
+      await enqueueMutation(() => replacement);
+    },
+    [enqueueMutation],
+  );
 
   const resetCompletions = useCallback(async () => {
-    if (loadingRef.current) {
-      throw new Error("Completion data is still loading.");
-    }
-
-    const emptyCompletions: CompletionsMap = {};
-
-    const saveOperation = saveQueueRef.current.then(async () => {
-      await saveCompletions(emptyCompletions);
-    });
-
-    saveQueueRef.current = saveOperation.catch((error) => {
-      console.error("Failed to reset completions:", error);
-    });
-
-    await saveOperation;
-
-    completionsRef.current = emptyCompletions;
-    setCompletions(emptyCompletions);
-  }, []);
+    await enqueueMutation(() => ({}));
+  }, [enqueueMutation]);
 
   return (
     <CompletionsContext.Provider

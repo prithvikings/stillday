@@ -55,6 +55,7 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
   const habitsRef = useRef<Habit[]>([]);
   const writeQueueRef = useRef<Promise<void>>(Promise.resolve());
   const loadingRef = useRef(true);
+  const loadErrorRef = useRef<Error | null>(null);
 
   const { removeHabitCompletions } = useSharedCompletions();
 
@@ -72,6 +73,8 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
 
         let next = stored;
 
+        // Seed sample habits only on a genuinely new installation.
+        // If the initialization marker exists, an empty list is intentional.
         if (initialized === null) {
           if (stored.length === 0) {
             await saveHabits(initialHabits);
@@ -85,99 +88,112 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
 
         habitsRef.current = next;
         setHabits(next);
+        loadErrorRef.current = null;
       } catch (error) {
-        console.error("Failed to load habits:", error);
+        const normalizedError =
+          error instanceof Error
+            ? error
+            : new Error("Failed to load saved habits.");
+
+        loadErrorRef.current = normalizedError;
+        console.error("Failed to initialize habits:", normalizedError);
       } finally {
         if (active) {
+          // loading=false means the attempt finished; loadErrorRef still
+          // prevents mutations if initialization failed.
           loadingRef.current = false;
           setLoading(false);
         }
       }
     }
 
-    load();
+    void load();
 
     return () => {
       active = false;
     };
   }, []);
 
-  const enqueueSave = useCallback((next: Habit[]) => {
-    const saveOperation = writeQueueRef.current.then(() => saveHabits(next));
+  const assertReady = useCallback(() => {
+    if (loadingRef.current) {
+      throw new Error("Habits are still loading.");
+    }
 
-    // Keep the queue usable even if a previous save fails.
-    writeQueueRef.current = saveOperation.catch((error) => {
-      console.error("Failed to save habits:", error);
-    });
-
-    return saveOperation;
+    if (loadErrorRef.current) {
+      throw new Error(
+        "Saved habits could not be loaded. Restart the app and try again before making changes.",
+      );
+    }
   }, []);
+
+  // Each operation computes its next state only after earlier writes finish.
+  // A failed write rejects that operation but does not permanently poison
+  // the queue for subsequent operations.
+  const enqueueMutation = useCallback(
+    (mutate: (current: Habit[]) => Habit[]) => {
+      const operation = writeQueueRef.current.then(async () => {
+        assertReady();
+
+        const current = habitsRef.current;
+        const next = mutate(current);
+
+        await saveHabits(next);
+
+        habitsRef.current = next;
+        setHabits(next);
+      });
+
+      writeQueueRef.current = operation.catch((error) => {
+        console.error("Failed to save habits:", error);
+      });
+
+      return operation;
+    },
+    [assertReady],
+  );
 
   const addHabit = useCallback(
     async (habit: Habit) => {
-      if (loadingRef.current) {
-        throw new Error("Habits are still loading.");
-      }
+      await enqueueMutation((current) => {
+        if (current.some((item) => item.id === habit.id)) {
+          throw new Error("A habit with this ID already exists.");
+        }
 
-      const current = habitsRef.current;
-
-      if (current.some((item) => item.id === habit.id)) {
-        throw new Error("A habit with this ID already exists.");
-      }
-
-      const next = [...current, habit];
-
-      // Save first so a failed write doesn't change the visible state.
-      await enqueueSave(next);
-
-      habitsRef.current = next;
-      setHabits(next);
+        return [...current, habit];
+      });
     },
-    [enqueueSave],
+    [enqueueMutation],
   );
 
   const updateHabit = useCallback(
     async (habit: Habit) => {
-      if (loadingRef.current) {
-        throw new Error("Habits are still loading.");
-      }
+      await enqueueMutation((current) => {
+        if (!current.some((item) => item.id === habit.id)) {
+          throw new Error("Habit not found.");
+        }
 
-      const current = habitsRef.current;
-
-      if (!current.some((item) => item.id === habit.id)) {
-        throw new Error("Habit not found.");
-      }
-
-      const next = current.map((item) => (item.id === habit.id ? habit : item));
-
-      await enqueueSave(next);
-
-      habitsRef.current = next;
-      setHabits(next);
+        return current.map((item) => (item.id === habit.id ? habit : item));
+      });
     },
-    [enqueueSave],
+    [enqueueMutation],
   );
 
   const deleteHabit = useCallback(
     async (id: string) => {
-      if (loadingRef.current) {
-        throw new Error("Habits are still loading.");
-      }
+      let didDelete = false;
 
-      const current = habitsRef.current;
+      await enqueueMutation((current) => {
+        if (!current.some((item) => item.id === id)) {
+          return current;
+        }
 
-      if (!current.some((item) => item.id === id)) {
-        return;
-      }
+        didDelete = true;
+        return current.filter((item) => item.id !== id);
+      });
 
-      // Save the updated habit list first.
-      const next = current.filter((item) => item.id !== id);
-      await enqueueSave(next);
+      if (!didDelete) return;
 
-      habitsRef.current = next;
-      setHabits(next);
-
-      // Clean up history after the habit deletion succeeds.
+      // Only clean completion history after the habit-list save succeeds.
       try {
         await removeHabitCompletions(id);
       } catch (error) {
@@ -187,41 +203,22 @@ export function HabitsProvider({ children }: { children: ReactNode }) {
         );
       }
     },
-    [enqueueSave, removeHabitCompletions],
+    [enqueueMutation, removeHabitCompletions],
   );
 
   const replaceHabits = useCallback(
     async (next: Habit[]) => {
-      if (loadingRef.current) {
-        throw new Error("Habits are still loading.");
-      }
-
-      const saveOperation = enqueueSave(next);
-
-      await saveOperation;
-
-      habitsRef.current = next;
-      setHabits(next);
-
+      await enqueueMutation(() => next);
       await AsyncStorage.setItem(INITIALIZED_KEY, "true");
     },
-    [enqueueSave],
+    [enqueueMutation],
   );
 
   const resetHabits = useCallback(async () => {
-    if (loadingRef.current) {
-      throw new Error("Habits are still loading.");
-    }
-
-    const emptyHabits: Habit[] = [];
-
-    await enqueueSave(emptyHabits);
-
-    habitsRef.current = emptyHabits;
-    setHabits(emptyHabits);
-
+    await enqueueMutation(() => []);
     await AsyncStorage.setItem(INITIALIZED_KEY, "true");
-  }, [enqueueSave]);
+  }, [enqueueMutation]);
+
   return (
     <HabitsContext.Provider
       value={{

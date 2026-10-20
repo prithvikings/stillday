@@ -12,6 +12,8 @@ export async function exportBackup(): Promise<void> {
     throw new Error("Sharing is not available on this device.");
   }
 
+  // Read both datasets before creating a backup so a read failure never
+  // produces a file that looks like a successful, complete export.
   const [habits, completions] = await Promise.all([
     getHabits(),
     getCompletions(),
@@ -27,19 +29,17 @@ export async function exportBackup(): Promise<void> {
     },
   };
 
-  const fileName = `stillday-backup-${new Date()
-    .toISOString()
-    .slice(0, 10)}.json`;
+  const dateStamp = new Date().toISOString().slice(0, 10);
+  const fileName = `stillday-backup-${dateStamp}.json`;
 
   const directory = new Directory(Paths.cache);
   const file = new File(directory, fileName);
 
+  // These Expo FileSystem operations are synchronous in the current API.
   file.create({ overwrite: true });
   file.write(JSON.stringify(backup, null, 2));
 
-  const fileUri = file.uri;
-
-  await Sharing.shareAsync(fileUri, {
+  await Sharing.shareAsync(file.uri, {
     mimeType: "application/json",
     dialogTitle: "Export Stillday backup",
     UTI: "public.json",
